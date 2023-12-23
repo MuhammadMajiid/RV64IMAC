@@ -942,8 +942,8 @@ u_riscv_core_mux4x1
 (
   .i_mux4x1_in0 (mem_wb_pipe_alu_result)
   ,.i_mux4x1_in1(mem_wb_pipe_read_data)
-  ,.i_mux4x1_in2(mem_wb_pipe_auipc)
-  ,.i_mux4x1_in3(mem_wb_pipe_pc_plus_4)
+  ,.i_mux4x1_in2(mem_wb_pipe_pc_plus_4)
+  ,.i_mux4x1_in3(mem_wb_pipe_auipc)
   ,.i_mux4x1_sel(mem_wb_pipe_resultsrc)
   ,.o_mux4x1_out(result_wb)
 );
