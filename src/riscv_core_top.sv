@@ -266,9 +266,9 @@ u_riscv_core_rf
 riscv_core_immextend
 u_riscv_core_immextend
 (
-  .i_riscv_core_immextend_imm     (if_id_pipe_instr[31:7]) //instruction [31:7]
-  ,.i_riscv_core_immextend_immsrc (immsrc_id) //cotrol from MAin decoder
-  ,.i_riscv_core_immextend_out    (immext_id) //extended output
+  .i_immextend_imm     (if_id_pipe_instr[31:7]) //instruction [31:7]
+  ,.i_immextend_immsrc (immsrc_id)              //cotrol from MAin decoder
+  ,.o_immextend_out    (immext_id)              //extended output
 );
 
 //----------------------------------//
