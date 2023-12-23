@@ -1,2 +1,2 @@
 # RISC-V
-Standard RISC-V implementation using System Verilog HDL
+RV64IMAC modelling using SystemVerilog HDL

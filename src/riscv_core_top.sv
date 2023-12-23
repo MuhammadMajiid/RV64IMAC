@@ -1,8 +1,8 @@
 module riscv_core_top 
 (
-    // Global inputs
-    input logic i_riscv_core_clk,
-    input logic i_riscv_core_rst_n
+  // Global inputs
+  input logic i_riscv_core_clk,
+  input logic i_riscv_core_rst_n
 );
 //-------------Local Parameters-------------//
 localparam EX_XLEN  = 64;
@@ -17,6 +17,7 @@ logic [31:0] if_id_pipe_instr;
 logic [63:0] pc;
 logic [63:0] pcf;
 logic [63:0] pc_plus_4_if;
+logic [63:0] mux_to_stg2;
 logic [31:0] instr;
 
 //-------------ID Intermediate Signals-------------//
@@ -41,10 +42,10 @@ logic        id_ex_pipe_uctrl;
 logic        id_ex_pipe_memwrite;
 logic        id_ex_pipe_regwrite;
 logic [63:0] rd1_id;
-logic [63:0] rd2_id;
+logic [36:0] rd2_id;
 logic [63:0] immext_id;
 logic [63:0] resultsrc_id;
-logic [3:0]  alu_control_id
+logic [3:0]  alu_control_id;
 logic [2:0]  immsrc_id;
 logic [1:0]  size_id;
 logic        alu_op_id;
@@ -56,6 +57,7 @@ logic        branch_id;
 logic        jump_id;
 logic        ldext_id;
 logic        isword_id;
+logic        bjreg_id;
 
 //-------------EX Intermediate Signals-------------//
 logic [63:0] ex_mem_pipe_alu_result;
@@ -104,7 +106,54 @@ logic        hu_flush_ex;
 //-------------IF Stage-------------//
 //----------------------------------//
 
+riscv_core_mux2x1
+#(
+  .XLEN (64)
+)
+u_riscv_core_mux2x1_stg1
+(
+  .i_mux2x1_in0 (auipc)
+  ,.i_mux2x1_in1(alu_result_ex)
+  ,.i_mux2x1_sel(bjreg_id)
+  ,.o_mux2x1_out(mux_to_stg2)
+);
 
+riscv_core_mux2x1
+#(
+  .XLEN (64)
+)
+u_riscv_core_mux2x1_stg2
+(
+  .i_mux2x1_in0 (pc_plus_4_if)
+  ,.i_mux2x1_in1(mux_to_stg2)
+  ,.i_mux2x1_sel(pcsrc_ex)
+  ,.o_mux2x1_out(pcf)
+);
+
+riscv_core_64bit_adder
+#(
+  .XLEN (64)
+)
+u_riscv_core_64bit_adder_pc_if
+(
+  .i_64bit_adder_srcA   (if_id_pipe_pcf_new)
+  ,.i_64bit_adder_srcB  (64'd4)
+  ,.o_64bit_adder_result(pc_plus_4_if)
+);
+
+riscv_core_imem
+#(
+  .ALEN (64)
+  ,.ILEN(32)
+  ,.MWID(8)
+  ,.MLEN(256)
+)
+u_riscv_core_imem
+(
+  .i_imem_rst_n    (i_riscv_core_rst_n)
+  ,.i_imem_address (if_id_pipe_pcf_new)
+  ,.o_imem_rdata   (instr)
+);
 
 //----------------------------------//
 //------------IF/ID Pipe------------//
@@ -173,18 +222,18 @@ u_riscv_core_pipe_pc_plus_4_if_id
 riscv_core_alu_decoder 
 u_riscv_core_alu_decoder
 (
-  .i_alu_decoder_funct3     (if_id_pipe_instr[:])
+  .i_alu_decoder_funct3     (if_id_pipe_instr[14:12])
   ,.i_alu_decoder_aluop     (alu_op_id)
-  ,.i_alu_decoder_funct7_5  (if_id_pipe_instr[:])
-  ,.i_alu_decoder_opcode_5  (if_id_pipe_instr[:])
+  ,.i_alu_decoder_funct7_5  (if_id_pipe_instr[30])
+  ,.i_alu_decoder_opcode_5  (if_id_pipe_instr[5])
   ,.o_alu_decoder_alucontrol(alu_control_id)
 );
 
 riscv_core_main_decoder
 u_riscv_core_main_decoder
 (
-  .i_main_decoder_opcode     (if_id_pipe_instr[:])
-  ,.i_main_decoder_funct3    (if_id_pipe_instr[:])
+  .i_main_decoder_opcode     (if_id_pipe_instr[6:0])
+  ,.i_main_decoder_funct3    (if_id_pipe_instr[14:12])
   ,.o_main_decoder_imsrc     (immsrc_id)
   ,.o_main_decoder_UCtrl     (uctrl_id)
   ,.o_main_decoder_resultsrc (resultsrc_id)
@@ -196,10 +245,23 @@ u_riscv_core_main_decoder
   ,.o_main_decoder_size      (size_id)
   ,.o_main_decoder_LdExt     (ldext_id)
   ,.o_main_decoder_isword    (isword_id)
+  ,.o_main_decoder_bjreg     (bjreg_id)
   ,.o_main_decoder_aluop     (alu_op_id)
 );
 
-// TODO: RF Here.....................................
+riscv_core_rf
+u_riscv_core_rf
+(
+	.i_rf_clk	 (i_riscv_core_clk)
+	,.i_rf_we3 (mem_wb_pipe_regwrite)
+	,.i_rf_a1  (instr[19:15])
+	,.i_rf_a2  (instr[24:20])
+	,.i_rf_a3  (mem_wb_pipe_rd)
+	,.i_rf_wd3 (result_wb)
+	,.o_rf_rd1 (rd1_id)
+	,.o_rf_rd2 (rd2_id)
+);
+
 
 riscv_core_immextend
 u_riscv_core_immextend
@@ -253,7 +315,7 @@ u_riscv_core_pipe_funct3_id_ex
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
-  ,.i_pipe_in    (if_id_pipe_instr[:]) // funct3
+  ,.i_pipe_in    (if_id_pipe_instr[14:12]) // funct3
   ,.o_pipe_out   (id_ex_pipe_funct3)
 );
 
@@ -281,7 +343,7 @@ u_riscv_core_pipe_rs1_id_ex
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
-  ,.i_pipe_in    (if_id_pipe_instr[:]) // rs1D
+  ,.i_pipe_in    (if_id_pipe_instr[19:15]) // rs1D
   ,.o_pipe_out   (id_ex_pipe_rs1)
 );
 
@@ -295,7 +357,7 @@ u_riscv_core_pipe_rs2_id_ex
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
-  ,.i_pipe_in    (if_id_pipe_instr[:]) // rs2D
+  ,.i_pipe_in    (if_id_pipe_instr[24:20]) // rs2D
   ,.o_pipe_out   (id_ex_pipe_rs2)
 );
 
@@ -309,7 +371,7 @@ u_riscv_core_pipe_rd_id_ex
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
-  ,.i_pipe_in    (if_id_pipe_instr[:]) // rdD
+  ,.i_pipe_in    (if_id_pipe_instr[11:7]) // rdD
   ,.o_pipe_out   (id_ex_pipe_rd)
 );
 
@@ -326,8 +388,6 @@ u_riscv_core_pipe_pc_plus_4_id_ex
   ,.i_pipe_in    (if_id_pipe_pc_plus_4) // (pc+4)D
   ,.o_pipe_out   (id_ex_pipe_pc_plus_4)
 );
-
-// TODO: RF PIPE Here.........................................
 
 riscv_core_pipe 
 #(
@@ -579,7 +639,7 @@ riscv_core_64bit_adder
 #(
   .XLEN (EX_XLEN)
 )
-u_riscv_core_64bit_adder
+u_riscv_core_64bit_adder_target_pc_ex
 (
   .i_64bit_adder_srcA   (id_ex_pipe_pc)
   ,.i_64bit_adder_srcB  (id_ex_pipe_imm)
@@ -895,8 +955,8 @@ u_riscv_core_mux4x1
 riscv_core_hazard_unit
 (
     // RV64I Detection inputs
-    .i_hazard_unit_rs1_id         (if_id_pipe_instr[:]) // rs1D
-    ,.i_hazard_unit_rs2_id        (if_id_pipe_instr[:]) // rs2D
+    .i_hazard_unit_rs1_id         (if_id_pipe_instr[19:15]) // rs1D
+    ,.i_hazard_unit_rs2_id        (if_id_pipe_instr[24:20]) // rs2D
     ,.i_hazard_unit_rs1_ex        (id_ex_pipe_rs1)
     ,.i_hazard_unit_rs2_ex        (id_ex_pipe_rs2)
     ,.i_hazard_unit_rd_ex         (id_ex_pipe_rd)

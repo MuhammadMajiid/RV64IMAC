@@ -17,7 +17,7 @@ u_riscv_core_mux4x1
 //////////////////////////////////////////////////////////////////////////
 module riscv_core_mux4x1
 #(
-  parameter XLEN = 64;
+  parameter XLEN = 64
 )
 (
   input  logic [XLEN-1:0] i_mux4x1_in0,
@@ -26,7 +26,8 @@ module riscv_core_mux4x1
   input  logic [XLEN-1:0] i_mux4x1_in3,
   input  logic [1:0]      i_mux4x1_sel,
   output logic [XLEN-1:0] o_mux4x1_out
-)
+);
+
 always_comb
   begin: out_proc
     case (i_mux4x1_sel)
