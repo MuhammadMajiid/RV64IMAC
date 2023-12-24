@@ -24,7 +24,7 @@ module riscv_core_alu
   input  logic            i_alu_isword,
   output logic [XLEN-1:0] o_alu_result
 );
-logic [31:0] o_alu_resultword;
+logic [XLEN-1:0] o_alu_resultword;
 always_comb
   begin: result_proc
     if(!i_alu_isword)
