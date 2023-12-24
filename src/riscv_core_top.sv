@@ -14,7 +14,6 @@ logic [63:0] if_id_pipe_pc;
 logic [63:0] if_id_pipe_pcf_new;
 logic [63:0] if_id_pipe_pc_plus_4;
 logic [31:0] if_id_pipe_instr;
-logic [63:0] pc;
 logic [63:0] pcf;
 logic [63:0] pc_plus_4_if;
 logic [63:0] mux_to_stg2;
@@ -70,8 +69,6 @@ logic [1:0]  ex_mem_pipe_size;
 logic        ex_mem_pipe_memwrite;
 logic        ex_mem_pipe_ldext;
 logic        ex_mem_pipe_regwrite;
-logic [63:0] wb_forward_a;
-logic [63:0] wb_forward_b;
 logic [63:0] src_a_ex;
 logic [63:0] src_b_ex;
 logic [63:0] src_b_out;
@@ -95,8 +92,8 @@ logic        mem_wb_pipe_regwrite;
 logic [63:0] result_wb;
 
 //-------------HU Intermediate Signals-------------//
-logic        hu_froward_a;
-logic        hu_froward_b;
+logic [1:0]  hu_forward_a;
+logic [1:0]  hu_forward_b;
 logic        hu_stall_if;
 logic        hu_stall_id;
 logic        hu_flush_id;
@@ -183,7 +180,7 @@ u_riscv_core_pipe_pc_if_id
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_id)
   ,.i_pipe_en_n  (hu_stall_id)
-  ,.i_pipe_in    (pc)
+  ,.i_pipe_in    (if_id_pipe_pcf_new)
   ,.o_pipe_out   (if_id_pipe_pc)
 );
 
@@ -570,7 +567,7 @@ riscv_core_mux3x1
 u_riscv_core_mux3x1_srca
 (
   .i_mux3x1_in0 (id_ex_pipe_rd1)
-  ,.i_mux3x1_in1(wb_forward_a)
+  ,.i_mux3x1_in1(hu_forward_a)
   ,.i_mux3x1_in2(ex_mem_pipe_alu_result)
   ,.i_mux3x1_sel(hu_froward_a)
   ,.o_mux3x1_out(src_a_ex)
@@ -583,7 +580,7 @@ riscv_core_mux3x1
 u_riscv_core_mux3x1_srcb
 (
   .i_mux3x1_in0 (id_ex_pipe_rd2)
-  ,.i_mux3x1_in1(wb_forward_b)
+  ,.i_mux3x1_in1(hu_forward_b)
   ,.i_mux3x1_in2(ex_mem_pipe_alu_result)
   ,.i_mux3x1_sel(hu_froward_b)
   ,.o_mux3x1_out(src_b_out)
@@ -968,8 +965,8 @@ riscv_core_hazard_unit
     ,.i_hazard_unit_resultsrc0_ex (id_ex_pipe_resultsrc[0])
     ,.i_hazard_unit_pcsrc_ex      (pcsrc_ex)
     // Forwarding outputs
-    ,.o_hazard_unit_forwarda_ex   (hu_froward_a)
-    ,.o_hazard_unit_forwardb_ex   (hu_froward_b)
+    ,.o_hazard_unit_forwarda_ex   (hu_forward_a)
+    ,.o_hazard_unit_forwardb_ex   (hu_forward_b)
     // Stall outputs
     ,.o_hazard_unit_stall_if      (hu_stall_if)
     ,.o_hazard_unit_stall_id      (hu_stall_id)
