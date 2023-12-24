@@ -251,8 +251,8 @@ u_riscv_core_rf
 (
 	.i_rf_clk	 (i_riscv_core_clk)
 	,.i_rf_we3 (mem_wb_pipe_regwrite)
-	,.i_rf_a1  (instr[19:15])
-	,.i_rf_a2  (instr[24:20])
+	,.i_rf_a1  (if_id_pipe_instr[19:15])
+	,.i_rf_a2  (if_id_pipe_instr[24:20])
 	,.i_rf_a3  (mem_wb_pipe_rd)
 	,.i_rf_wd3 (result_wb)
 	,.o_rf_rd1 (rd1_id)
