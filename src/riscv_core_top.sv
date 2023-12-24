@@ -41,7 +41,7 @@ logic        id_ex_pipe_uctrl;
 logic        id_ex_pipe_memwrite;
 logic        id_ex_pipe_regwrite;
 logic [63:0] rd1_id;
-logic [36:0] rd2_id;
+logic [63:0] rd2_id;
 logic [63:0] immext_id;
 logic [63:0] resultsrc_id;
 logic [3:0]  alu_control_id;
@@ -950,6 +950,7 @@ u_riscv_core_mux4x1
 //------------Hazard Unit-----------//
 //----------------------------------//
 riscv_core_hazard_unit
+u_riscv_core_hazard_unit
 (
     // RV64I Detection inputs
     .i_hazard_unit_rs1_id         (if_id_pipe_instr[19:15]) // rs1D
