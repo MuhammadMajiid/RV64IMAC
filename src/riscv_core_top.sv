@@ -445,7 +445,7 @@ riscv_core_pipe
 #(
   .W_PIPE_BUS (1)
 )
-u_riscv_core_pipe_alucontrol_id_ex
+u_riscv_core_pipe_bjreg_id_ex
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
