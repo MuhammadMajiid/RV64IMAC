@@ -5,9 +5,6 @@ module riscv_core_top
   input logic i_riscv_core_rst_n
 );
 //-------------Local Parameters-------------//
-localparam EX_XLEN  = 64;
-localparam REG_XLEN = 5;
-localparam PC_XLEN  = 32;
 
 //-------------IF Intermediate Signals-------------//
 logic [63:0] if_id_pipe_pc;
@@ -43,9 +40,9 @@ logic        id_ex_pipe_regwrite;
 logic [63:0] rd1_id;
 logic [63:0] rd2_id;
 logic [63:0] immext_id;
-logic [63:0] resultsrc_id;
 logic [3:0]  alu_control_id;
 logic [2:0]  immsrc_id;
+logic [1:0] resultsrc_id;
 logic [1:0]  size_id;
 logic        alu_op_id;
 logic        uctrl_id;
@@ -57,6 +54,7 @@ logic        jump_id;
 logic        ldext_id;
 logic        isword_id;
 logic        bjreg_id;
+logic        id_ex_pipe_bjreg;
 
 //-------------EX Intermediate Signals-------------//
 logic [63:0] ex_mem_pipe_alu_result;
@@ -111,7 +109,7 @@ u_riscv_core_mux2x1_stg1
 (
   .i_mux2x1_in0 (auipc)
   ,.i_mux2x1_in1(alu_result_ex)
-  ,.i_mux2x1_sel(bjreg_id)
+  ,.i_mux2x1_sel(id_ex_pipe_bjreg)
   ,.o_mux2x1_out(mux_to_stg2)
 );
 
@@ -160,7 +158,7 @@ riscv_core_pipe
 #(
   .W_PIPE_BUS (64)
 )
-u_riscv_core_pipe_pcf_if_id
+u_riscv_core_pipe_pcf_if
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
@@ -374,7 +372,7 @@ u_riscv_core_pipe_rd_id_ex
 
 riscv_core_pipe 
 #(
-  .W_PIPE_BUS (5)
+  .W_PIPE_BUS (64)
 )
 u_riscv_core_pipe_pc_plus_4_id_ex
 (
@@ -447,11 +445,25 @@ riscv_core_pipe
 #(
   .W_PIPE_BUS (1)
 )
+u_riscv_core_pipe_alucontrol_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_in    (bjreg_id)
+  ,.o_pipe_out   (id_ex_pipe_bjreg)
+);
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
 u_riscv_core_pipe_regwrite_id_ex
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (1'b0)
+  ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
   ,.i_pipe_in    (regwrite_id)
   ,.o_pipe_out   (id_ex_pipe_regwrite)
@@ -465,7 +477,7 @@ u_riscv_core_pipe_branch_id_ex
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (1'b0)
+  ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
   ,.i_pipe_in    (branch_id)
   ,.o_pipe_out   (id_ex_pipe_branch)
@@ -479,7 +491,7 @@ u_riscv_core_pipe_jump_id_ex
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (1'b0)
+  ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
   ,.i_pipe_in    (jump_id)
   ,.o_pipe_out   (id_ex_pipe_jump)
@@ -494,7 +506,7 @@ u_riscv_core_pipe_memwrite_id_ex
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (1'b0)
+  ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
   ,.i_pipe_in    (memwrite_id)
   ,.o_pipe_out   (id_ex_pipe_memwrite)
@@ -508,7 +520,7 @@ u_riscv_core_pipe_alusrc_id_ex
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (1'b0)
+  ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
   ,.i_pipe_in    (alusrc_id)
   ,.o_pipe_out   (id_ex_pipe_alu_srcb)
@@ -522,7 +534,7 @@ u_riscv_core_pipe_ldext_id_ex
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (1'b0)
+  ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
   ,.i_pipe_in    (ldext_id)
   ,.o_pipe_out   (id_ex_pipe_ldext)
@@ -536,7 +548,7 @@ u_riscv_core_pipe_uctrl_id_ex
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (1'b0)
+  ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
   ,.i_pipe_in    (uctrl_id)
   ,.o_pipe_out   (id_ex_pipe_uctrl)
@@ -550,7 +562,7 @@ u_riscv_core_pipe_isword_id_ex
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (1'b0)
+  ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
   ,.i_pipe_in    (isword_id)
   ,.o_pipe_out   (id_ex_pipe_isword)
@@ -562,7 +574,7 @@ u_riscv_core_pipe_isword_id_ex
 
 riscv_core_mux3x1
 #(
-  .XLEN (EX_XLEN)
+  .XLEN (64)
 )
 u_riscv_core_mux3x1_srca
 (
@@ -575,7 +587,7 @@ u_riscv_core_mux3x1_srca
 
 riscv_core_mux3x1
 #(
-  .XLEN (EX_XLEN)
+  .XLEN (64)
 )
 u_riscv_core_mux3x1_srcb
 (
@@ -588,7 +600,7 @@ u_riscv_core_mux3x1_srcb
 
 riscv_core_mux2x1
 #(
-  .XLEN (EX_XLEN)
+  .XLEN (64)
 )
 u_riscv_core_mux2x1_srcb
 (
@@ -600,7 +612,7 @@ u_riscv_core_mux2x1_srcb
 
 riscv_core_alu
 #(
-  .XLEN (EX_XLEN)
+  .XLEN (64)
 )
 u_riscv_core_alu
 (
@@ -613,7 +625,7 @@ u_riscv_core_alu
 
 riscv_core_branch_unit
 #(
-  .XLEN (EX_XLEN)
+  .XLEN (64)
 )
 u_riscv_core_branch_unit
 (
@@ -634,7 +646,7 @@ u_riscv_core_pcsrc
 
 riscv_core_64bit_adder
 #(
-  .XLEN (EX_XLEN)
+  .XLEN (64)
 )
 u_riscv_core_64bit_adder_target_pc_ex
 (
@@ -645,7 +657,7 @@ u_riscv_core_64bit_adder_target_pc_ex
 
 riscv_core_mux2x1
 #(
-  .XLEN (EX_XLEN)
+  .XLEN (64)
 )
 u_riscv_core_mux2x1_imm
 (
@@ -662,7 +674,7 @@ u_riscv_core_mux2x1_imm
 //-----------Data Signals-----------//
 riscv_core_pipe 
 #(
-  .W_PIPE_BUS (EX_XLEN)
+  .W_PIPE_BUS (64)
 )
 u_riscv_core_pipe_alu_result_ex_mem
 (
@@ -676,7 +688,7 @@ u_riscv_core_pipe_alu_result_ex_mem
 
 riscv_core_pipe 
 #(
-  .W_PIPE_BUS (EX_XLEN)
+  .W_PIPE_BUS (64)
 )
 u_riscv_core_pipe_wd_ex_mem
 (
@@ -690,7 +702,7 @@ u_riscv_core_pipe_wd_ex_mem
 
 riscv_core_pipe 
 #(
-  .W_PIPE_BUS (EX_XLEN)
+  .W_PIPE_BUS (64)
 )
 u_riscv_core_pipe_auipc_ex_mem
 (
@@ -704,7 +716,7 @@ u_riscv_core_pipe_auipc_ex_mem
 
 riscv_core_pipe 
 #(
-  .W_PIPE_BUS (REG_XLEN)
+  .W_PIPE_BUS (5)
 )
 u_riscv_core_pipe_rd_ex_mem
 (
@@ -718,7 +730,7 @@ u_riscv_core_pipe_rd_ex_mem
 
 riscv_core_pipe 
 #(
-  .W_PIPE_BUS (PC_XLEN)
+  .W_PIPE_BUS (64)
 )
 u_riscv_core_pipe_pc_ex_mem
 (
@@ -830,7 +842,7 @@ u_riscv_core_data_mem
 
 riscv_core_pipe 
 #(
-  .W_PIPE_BUS (EX_XLEN)
+  .W_PIPE_BUS (64)
 )
 u_riscv_core_pipe_alu_result_mem_wb
 (
@@ -886,7 +898,7 @@ u_riscv_core_pipe_pc_mem_wb
 
 riscv_core_pipe 
 #(
-  .W_PIPE_BUS (REG_XLEN)
+  .W_PIPE_BUS (5)
 )
 u_riscv_core_pipe_rd_mem_wb
 (
