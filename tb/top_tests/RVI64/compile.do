@@ -1,5 +1,5 @@
 vlog riscv_core_64bit_adder.sv riscv_core_alu_decoder.sv riscv_core_alu.sv riscv_core_branch_unit.sv riscv_core_data_mem.sv riscv_core_hazard_unit.sv riscv_core_imem.sv riscv_core_immextend.sv riscv_core_main_decoder.sv riscv_core_mux2x1.sv riscv_core_mux3x1.sv riscv_core_mux4x1.sv riscv_core_pcsrc.sv riscv_core_pipe.sv riscv_core_rf.sv riscv_core_top.sv
-vlog  tb_rv_sw.sv //put the test file here
+vlog  tb_rv_sw.sv
 vsim -debugdb tb
 add wave -position insertpoint  \
 sim:/tb/XLEN \
