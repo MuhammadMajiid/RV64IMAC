@@ -9,19 +9,22 @@ module riscv_core_top
 //-------------IF Intermediate Signals-------------//
 logic [63:0] if_id_pipe_pc;
 logic [63:0] if_id_pipe_pcf_new;
-logic [63:0] if_id_pipe_pc_plus_4;
+logic [63:0] if_id_pipe_pc_plus_offset;
 logic [31:0] if_id_pipe_instr;
 logic [63:0] pcf;
-logic [63:0] pc_plus_4_if;
+logic [63:0] pc_plus_offset_if;
 logic [63:0] mux_to_stg2;
 logic [31:0] instr;
+logic [31:0] c_ext_instr_out;
+logic        instr_is_compressed;
+logic        instr_is_illegal;
 
 //-------------ID Intermediate Signals-------------//
 logic [63:0] id_ex_pipe_imm;
 logic [63:0] id_ex_pipe_rd1;
 logic [63:0] id_ex_pipe_rd2;
 logic [63:0] id_ex_pipe_pc;
-logic [63:0] id_ex_pipe_pc_plus_4;
+logic [63:0] id_ex_pipe_pc_plus_offset;
 logic [4:0]  id_ex_pipe_rd;
 logic [4:0]  id_ex_pipe_rs1;
 logic [4:0]  id_ex_pipe_rs2;
@@ -60,7 +63,7 @@ logic        id_ex_pipe_bjreg;
 logic [63:0] ex_mem_pipe_alu_result;
 logic [63:0] ex_mem_pipe_wd;
 logic [63:0] ex_mem_pipe_auipc;
-logic [63:0] ex_mem_pipe_pc_plus_4;
+logic [63:0] ex_mem_pipe_pc_plus_offset;
 logic [4:0]  ex_mem_pipe_rd;
 logic [1:0]  ex_mem_pipe_resultsrc;
 logic [1:0]  ex_mem_pipe_size;
@@ -81,7 +84,7 @@ logic [63:0] read_data_mem;
 logic [63:0] mem_wb_pipe_alu_result;
 logic [63:0] mem_wb_pipe_read_data;
 logic [63:0] mem_wb_pipe_auipc;
-logic [63:0] mem_wb_pipe_pc_plus_4;
+logic [63:0] mem_wb_pipe_pc_plus_offset;
 logic [4:0]  mem_wb_pipe_rd;
 logic [1:0]  mem_wb_pipe_resultsrc;
 logic        mem_wb_pipe_regwrite; 
@@ -119,10 +122,22 @@ riscv_core_mux2x1
 )
 u_riscv_core_mux2x1_stg2
 (
-  .i_mux2x1_in0 (pc_plus_4_if)
+  .i_mux2x1_in0 (pc_plus_offset_if)
   ,.i_mux2x1_in1(mux_to_stg2)
   ,.i_mux2x1_sel(pcsrc_ex)
   ,.o_mux2x1_out(pcf)
+);
+
+riscv_core_mux2x1
+#(
+  .XLEN (64)
+)
+u_riscv_core_compressed_offset
+(
+  .i_mux2x1_in0 (64'd4)
+  ,.i_mux2x1_in1(64'd2)
+  ,.i_mux2x1_sel(instr_is_compressed)
+  ,.o_mux2x1_out(compressed_offset)
 );
 
 riscv_core_64bit_adder
@@ -132,8 +147,8 @@ riscv_core_64bit_adder
 u_riscv_core_64bit_adder_pc_if
 (
   .i_64bit_adder_srcA   (if_id_pipe_pcf_new)
-  ,.i_64bit_adder_srcB  (64'd4)
-  ,.o_64bit_adder_result(pc_plus_4_if)
+  ,.i_64bit_adder_srcB  (compressed_offset)
+  ,.o_64bit_adder_result(pc_plus_offset_if)
 );
 
 riscv_core_imem
@@ -148,6 +163,15 @@ u_riscv_core_imem
   .i_imem_rst_n    (i_riscv_core_rst_n)
   ,.i_imem_address (if_id_pipe_pcf_new)
   ,.o_imem_rdata   (instr)
+);
+
+riscv_core_compressed_decoder
+u_riscv_core_compressed_decoder
+(
+  .i_compressed_decoder_instr         (instr)
+  ,.o_compressed_decoder_instr        (c_ext_instr_out)
+  ,.o_compressed_decoder_is_compressed(instr_is_compressed)
+  ,.o_compressed_decoder_illegal_instr(instr_is_illegal)    // flag for illegal instr handling
 );
 
 //----------------------------------//
@@ -192,7 +216,7 @@ u_riscv_core_pipe_instr_if_id
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_id)
   ,.i_pipe_en_n  (hu_stall_id)
-  ,.i_pipe_in    (instr)
+  ,.i_pipe_in    (c_ext_instr_out)  // output of compressed decoder
   ,.o_pipe_out   (if_id_pipe_instr)
 );
 
@@ -200,14 +224,14 @@ riscv_core_pipe
 #(
   .W_PIPE_BUS (64)
 )
-u_riscv_core_pipe_pc_plus_4_if_id
+u_riscv_core_pipe_pc_plus_offset_if_id
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_id)
   ,.i_pipe_en_n  (hu_stall_id)
-  ,.i_pipe_in    (pc_plus_4_if)
-  ,.o_pipe_out   (if_id_pipe_pc_plus_4)
+  ,.i_pipe_in    (pc_plus_offset_if)
+  ,.o_pipe_out   (if_id_pipe_pc_plus_offset)
 );
 
 //----------------------------------//
@@ -374,14 +398,14 @@ riscv_core_pipe
 #(
   .W_PIPE_BUS (64)
 )
-u_riscv_core_pipe_pc_plus_4_id_ex
+u_riscv_core_pipe_pc_plus_offset_id_ex
 (
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
   ,.i_pipe_en_n  (1'b0)
-  ,.i_pipe_in    (if_id_pipe_pc_plus_4) // (pc+4)D
-  ,.o_pipe_out   (id_ex_pipe_pc_plus_4)
+  ,.i_pipe_in    (if_id_pipe_pc_plus_offset) // (pc+4)D
+  ,.o_pipe_out   (id_ex_pipe_pc_plus_offset)
 );
 
 riscv_core_pipe 
@@ -738,8 +762,8 @@ u_riscv_core_pipe_pc_ex_mem
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
   ,.i_pipe_en_n  (1'b0)
-  ,.i_pipe_in    (id_ex_pipe_pc_plus_4)
-  ,.o_pipe_out   (ex_mem_pipe_pc_plus_4)
+  ,.i_pipe_in    (id_ex_pipe_pc_plus_offset)
+  ,.o_pipe_out   (ex_mem_pipe_pc_plus_offset)
 );
 
 //---------Control Signals----------//
@@ -892,8 +916,8 @@ u_riscv_core_pipe_pc_mem_wb
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
   ,.i_pipe_en_n  (1'b0)
-  ,.i_pipe_in    (ex_mem_pipe_pc_plus_4)
-  ,.o_pipe_out   (mem_wb_pipe_pc_plus_4)
+  ,.i_pipe_in    (ex_mem_pipe_pc_plus_offset)
+  ,.o_pipe_out   (mem_wb_pipe_pc_plus_offset)
 );
 
 riscv_core_pipe 
@@ -951,7 +975,7 @@ u_riscv_core_mux4x1
 (
   .i_mux4x1_in0 (mem_wb_pipe_alu_result)
   ,.i_mux4x1_in1(mem_wb_pipe_read_data)
-  ,.i_mux4x1_in2(mem_wb_pipe_pc_plus_4)
+  ,.i_mux4x1_in2(mem_wb_pipe_pc_plus_offset)
   ,.i_mux4x1_in3(mem_wb_pipe_auipc)
   ,.i_mux4x1_sel(mem_wb_pipe_resultsrc)
   ,.o_mux4x1_out(result_wb)
