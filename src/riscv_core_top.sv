@@ -157,7 +157,7 @@ riscv_core_imem
   .ALEN (64)
   ,.ILEN(32)
   ,.MWID(8)
-  ,.MLEN(256)
+  ,.MLEN(5000)
 )
 u_riscv_core_imem
 (
@@ -606,7 +606,7 @@ u_riscv_core_mux3x1_srca
   .i_mux3x1_in0 (id_ex_pipe_rd1)
   ,.i_mux3x1_in1(result_wb)
   ,.i_mux3x1_in2(ex_mem_pipe_alu_result)
-  ,.i_mux3x1_sel(hu_forward_b)
+  ,.i_mux3x1_sel(hu_forward_a)
   ,.o_mux3x1_out(src_a_ex)
 );
 
@@ -619,7 +619,7 @@ u_riscv_core_mux3x1_srcb
   .i_mux3x1_in0 (id_ex_pipe_rd2)
   ,.i_mux3x1_in1(result_wb)
   ,.i_mux3x1_in2(ex_mem_pipe_alu_result)
-  ,.i_mux3x1_sel(hu_forward_a)
+  ,.i_mux3x1_sel(hu_forward_b)
   ,.o_mux3x1_out(src_b_out)
 );
 
@@ -845,7 +845,7 @@ riscv_core_data_mem
 #(
   .XLEN (64)
   ,.MWID(8)
-  ,.MLEN(256)
+  ,.MLEN(5000)
 )
 u_riscv_core_data_mem
 (
