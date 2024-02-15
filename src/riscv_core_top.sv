@@ -9,6 +9,7 @@ module riscv_core_top
 //-------------IF Intermediate Signals-------------//
 logic [63:0] if_id_pipe_pc;
 logic [63:0] if_id_pipe_pcf_new;
+logic [63:0] compressed_offset;
 logic [63:0] if_id_pipe_pc_plus_offset;
 logic [31:0] if_id_pipe_instr;
 logic [63:0] pcf;
@@ -156,7 +157,7 @@ riscv_core_imem
   .ALEN (64)
   ,.ILEN(32)
   ,.MWID(8)
-  ,.MLEN(256)
+  ,.MLEN(5000)
 )
 u_riscv_core_imem
 (
@@ -844,7 +845,7 @@ riscv_core_data_mem
 #(
   .XLEN (64)
   ,.MWID(8)
-  ,.MLEN(256)
+  ,.MLEN(5000)
 )
 u_riscv_core_data_mem
 (

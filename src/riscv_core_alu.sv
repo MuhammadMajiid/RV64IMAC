@@ -35,9 +35,9 @@ always_comb
           4'b0110: o_alu_result = i_alu_srcA ^ i_alu_srcB;                      // xor/xori
           4'b0011: o_alu_result = i_alu_srcA | i_alu_srcB;                      // or/ori
           4'b0010: o_alu_result = i_alu_srcA & i_alu_srcB;                      // and/andi
-          4'b0100: o_alu_result = $signed(i_alu_srcA) << i_alu_srcB[4:0];       // sll/slli
-          4'b0111: o_alu_result = $signed(i_alu_srcA) >> i_alu_srcB[4:0];       // srl/srli
-          4'b1111: o_alu_result = $signed(i_alu_srcA) >>> i_alu_srcB[4:0];      // sra/srai
+          4'b0100: o_alu_result = $signed(i_alu_srcA) << i_alu_srcB[5:0];       // sll/slli
+          4'b0111: o_alu_result = $signed(i_alu_srcA) >> i_alu_srcB[5:0];       // srl/srli
+          4'b1111: o_alu_result = $signed(i_alu_srcA) >>> i_alu_srcB[5:0];      // sra/srai
           4'b0101: o_alu_result = $signed(i_alu_srcA) < $signed(i_alu_srcB);    // slt/slti
           4'b1000: o_alu_result = $unsigned(i_alu_srcA) < $unsigned(i_alu_srcB);// sltu/sltiu
           default: o_alu_result = 'hxxxx_xxxx_xxxx_xxxx;
