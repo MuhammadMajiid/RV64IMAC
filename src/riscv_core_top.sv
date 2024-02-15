@@ -1000,7 +1000,7 @@ u_riscv_core_hazard_unit
     // Control signals inputs
     ,.i_hazard_unit_regwrite_mem  (ex_mem_pipe_regwrite)
     ,.i_hazard_unit_regwrite_wb   (mem_wb_pipe_regwrite)
-    ,.i_hazard_unit_resultsrc0_ex (id_ex_pipe_resultsrc[0])
+    ,.i_hazard_unit_resultsrc_ex (id_ex_pipe_resultsrc)
     ,.i_hazard_unit_pcsrc_ex      (pcsrc_ex)
     // Forwarding outputs
     ,.o_hazard_unit_forwarda_ex   (hu_forward_a)
