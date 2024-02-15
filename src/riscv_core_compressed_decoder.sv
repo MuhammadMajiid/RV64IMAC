@@ -142,9 +142,6 @@ always_comb begin
                     i_compressed_decoder_instr[11:7],
                     7'b0011011
                 };
-            else begin
-                o_compressed_decoder_illegal_instr = 1'b1;
-            end
            end
            C_LI : begin
                 o_compressed_decoder_instr = {
