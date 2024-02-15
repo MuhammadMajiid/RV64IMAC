@@ -15,7 +15,7 @@ module riscv_core_hazard_unit
     // Control signals inputs
     input logic i_hazard_unit_regwrite_mem,
     input logic i_hazard_unit_regwrite_wb,
-    input logic i_hazard_unit_resultsrc0_ex,
+    input logic [1:0] i_hazard_unit_resultsrc_ex,
     input logic i_hazard_unit_pcsrc_ex,
 
     // Forwarding outputs
@@ -73,7 +73,7 @@ end
 
 always_comb 
 begin : stall_proc
-    lwstall_detection = (i_hazard_unit_resultsrc0_ex && ((i_hazard_unit_rs1_id == i_hazard_unit_rd_ex) || (i_hazard_unit_rs2_id == i_hazard_unit_rd_ex)));
+    lwstall_detection = ((i_hazard_unit_resultsrc_ex == 2'b01) && ((i_hazard_unit_rs1_id == i_hazard_unit_rd_ex) || (i_hazard_unit_rs2_id == i_hazard_unit_rd_ex)));
     o_hazard_unit_stall_if = lwstall_detection;
     o_hazard_unit_stall_id = lwstall_detection;
 end

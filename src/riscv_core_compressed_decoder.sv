@@ -16,7 +16,7 @@ localparam C_SW       = 3'b110;
 localparam C_SD       = 3'b111;
 // Q1 C.Instructions
 localparam C_ADDI_NOP = 3'b000;
-localparam C_ADDIW_JAL = 3'b001;
+localparam C_ADDIW = 3'b001;
 localparam C_LI = 3'b010;
 localparam C_ADDIL6SP_LUI = 3'b011;
 localparam C_J = 3'b101;
@@ -73,11 +73,10 @@ always_comb begin
            end
            C_LD : begin
             o_compressed_decoder_instr = {
-                5'b0,
-                i_compressed_decoder_instr[5],
+                4'b0,
+                i_compressed_decoder_instr[6:5],
                 i_compressed_decoder_instr[12:10],
-                i_compressed_decoder_instr[6],
-                2'b00,
+                3'b000,
                 2'b01,
                 i_compressed_decoder_instr[9:7],
                 3'b011,
@@ -104,8 +103,8 @@ always_comb begin
            end
            C_SD : begin
             o_compressed_decoder_instr = {
-                5'b0,
-                i_compressed_decoder_instr[5],
+                4'b0,
+                i_compressed_decoder_instr[6:5],
                 i_compressed_decoder_instr[12],
                 2'b01,
                 i_compressed_decoder_instr[4:2],
@@ -113,8 +112,7 @@ always_comb begin
                 i_compressed_decoder_instr[9:7],
                 3'b011,
                 i_compressed_decoder_instr[11:10],
-                i_compressed_decoder_instr[6],
-                2'b00,
+                3'b000,
                 7'b0100011
               };
            end
@@ -124,18 +122,6 @@ always_comb begin
        Q1 : begin
         unique case (i_compressed_decoder_instr[15:13])
            C_ADDI_NOP : begin
-            o_compressed_decoder_instr = {
-                {6{i_compressed_decoder_instr[12]}},
-                i_compressed_decoder_instr[12],
-                i_compressed_decoder_instr[6:2],
-                i_compressed_decoder_instr[11:7],
-                3'b0,
-                i_compressed_decoder_instr[11:7],
-                7'b0010011
-            };
-           end
-           C_ADDIW_JAL : begin
-            if (i_compressed_decoder_instr[11:7] != 5'b0) begin
                 o_compressed_decoder_instr = {
                     {6{i_compressed_decoder_instr[12]}},
                     i_compressed_decoder_instr[12],
@@ -145,7 +131,17 @@ always_comb begin
                     i_compressed_decoder_instr[11:7],
                     7'b0010011
                 };
-            end
+           end
+           C_ADDIW : begin
+                o_compressed_decoder_instr = {
+                    {6{i_compressed_decoder_instr[12]}},
+                    i_compressed_decoder_instr[12],
+                    i_compressed_decoder_instr[6:2],
+                    i_compressed_decoder_instr[11:7],
+                    3'b0,
+                    i_compressed_decoder_instr[11:7],
+                    7'b0011011
+                };
             else begin
                 o_compressed_decoder_illegal_instr = 1'b1;
             end
@@ -268,8 +264,7 @@ always_comb begin
                            end
                            2'b11 : begin // --AND
                                 o_compressed_decoder_instr = {
-                                    2'b01,
-                                    5'b0,
+                                    7'b0,
                                     2'b01,
                                     i_compressed_decoder_instr[4:2],
                                     2'b01,
@@ -334,8 +329,7 @@ always_comb begin
            end
            C_BEQZ : begin
                 o_compressed_decoder_instr = {
-                    3'b0,
-                    i_compressed_decoder_instr[12],
+                    {4{i_compressed_decoder_instr[12]}},
                     i_compressed_decoder_instr[6:5],
                     i_compressed_decoder_instr[2],
                     5'b0,
@@ -344,14 +338,13 @@ always_comb begin
                     3'b0,
                     i_compressed_decoder_instr[11:10],
                     i_compressed_decoder_instr[4:3],
-                    1'b0,
+                    i_compressed_decoder_instr[12],
                     7'b1100011
                 };
            end
            C_BNEZ : begin
                 o_compressed_decoder_instr = {
-                    3'b0,
-                    i_compressed_decoder_instr[12],
+                    {4{i_compressed_decoder_instr[12]}},
                     i_compressed_decoder_instr[6:5],
                     i_compressed_decoder_instr[2],
                     5'b0,
@@ -360,7 +353,7 @@ always_comb begin
                     3'b001,
                     i_compressed_decoder_instr[11:10],
                     i_compressed_decoder_instr[4:3],
-                    1'b0,
+                    i_compressed_decoder_instr[12],
                     7'b1100011
                 };
            end 
@@ -374,7 +367,7 @@ always_comb begin
                         7'b0,
                         i_compressed_decoder_instr[6:2],
                         i_compressed_decoder_instr[11:7],
-                        3'b101,
+                        3'b001,
                         i_compressed_decoder_instr[11:7],
                         7'b0010011
                     };
@@ -433,8 +426,7 @@ always_comb begin
                     else begin
                         if (i_compressed_decoder_instr[11:2] == 5'b0) begin // --EBREAK
                             o_compressed_decoder_instr = {
-                                25'b0,
-                                7'b0110011
+                                32'h00_10_00_73
                             };
                         end
                         else if (i_compressed_decoder_instr[11:7] != 5'b0 && i_compressed_decoder_instr[6:2] == 5'b0) begin // --JALR
@@ -463,25 +455,27 @@ always_comb begin
                end
                C_SWSP : begin
                     o_compressed_decoder_instr = {
-                        6'b0,
-                        i_compressed_decoder_instr[8],
+                        4'b0,
+                        i_compressed_decoder_instr[8:7],
+                        i_compressed_decoder_instr[12],
                         i_compressed_decoder_instr[6:2],
                         5'b00010,
                         3'b010,
-                        i_compressed_decoder_instr[7],
-                        i_compressed_decoder_instr[12:9],
+                        i_compressed_decoder_instr[11:9],
+                        2'b00,
                         7'b0100011
                     };
                end
                C_SDSP : begin
                     o_compressed_decoder_instr = {
-                        6'b0,
-                        i_compressed_decoder_instr[9],
+                        3'b0,
+                        i_compressed_decoder_instr[9:7],
+                        i_compressed_decoder_instr[12],
                         i_compressed_decoder_instr[6:2],
                         5'b00010,
                         3'b011,
-                        i_compressed_decoder_instr[8:7],
-                        i_compressed_decoder_instr[12:10],
+                        i_compressed_decoder_instr[11:10],
+                        3'b000,
                         7'b0100011
                     };
                end
