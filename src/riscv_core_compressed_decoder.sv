@@ -175,7 +175,7 @@ always_comb begin
                     i_compressed_decoder_instr[12],
                     i_compressed_decoder_instr[6:2],
                     i_compressed_decoder_instr[11:7],
-                    7'b0010011
+                    7'b0110011
                 };
             end
            end
@@ -212,7 +212,7 @@ always_comb begin
                         i_compressed_decoder_instr[6:2],
                         2'b01,
                         i_compressed_decoder_instr[9:7],
-                        7'b0110011
+                        7'b0010011
                    };
                end
                2'b11 : begin // --ALU
@@ -247,8 +247,7 @@ always_comb begin
                            end
                            2'b10 : begin // --OR
                                 o_compressed_decoder_instr = {
-                                    2'b01,
-                                    5'b0,
+                                    7'b0,
                                     2'b01,
                                     i_compressed_decoder_instr[4:2],
                                     2'b01,
