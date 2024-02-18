@@ -14,6 +14,9 @@ module riscv_core_mul_div
   output  logic [XLEN-1:0] o_mul_div_result 
 );
 
+logic [XLEN-1:0] mul_result;
+logic [XLEN-1:0] div_result;
+
 riscv_core_mul
 #(
   .XLEN(XLEN)
@@ -24,7 +27,7 @@ riscv_core_mul
   .i_mul_control(i_mul_div_control[1:0]),
   .i_mul_isword(i_mul_div_isword),
   .i_mul_en(!i_mul_div_control[2] & i_mul_div_en),
-  .o_mul_result(o_mul_div_result)
+  .o_mul_result(mul_result)
 );
 
 riscv_core_div
@@ -41,6 +44,18 @@ u_riscv_core_div
   i_div_clk(i_mul_div_clk),
   i_div_rstn(i_mul_div_rstn),
   o_div_done(o_mul_div_done),
-  o_div_result(o_mul_div_result)
+  o_div_result(div_result)
+);
+
+riscv_core_mux2x1
+#(
+  .XLEN (XLEN)
+)
+u_riscv_core_mux2x1
+(
+  .i_mux2x1_in0 (mul_result)
+  ,.i_mux2x1_in1(div_result)
+  ,.i_mux2x1_sel(i_mul_div_control[2])
+  ,.o_mux2x1_out(o_mul_div_result)
 );
 endmodule
