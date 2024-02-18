@@ -154,7 +154,7 @@ always_comb
                   begin
                     o_div_in_dividend = i_div_in_srcA[XLEN/2-1:0];
                     o_div_in_divisor = i_div_in_srcB[XLEN/2-1:0];
-                   end
+                  end
                 2'b01:
                   begin
                     o_div_in_dividend = i_div_in_srcA;
