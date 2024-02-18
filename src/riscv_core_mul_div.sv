@@ -36,15 +36,15 @@ riscv_core_div
 )
 u_riscv_core_div
 (
-  i_div_srcA(i_mul_div_srcA),
-  i_div_srcB(i_mul_div_srcB),
-  i_div_control(i_mul_div_control[1:0]),
-  i_div_isword(i_mul_div_isword),
-  i_div_en(i_mul_div_control[2] & i_mul_div_en),
-  i_div_clk(i_mul_div_clk),
-  i_div_rstn(i_mul_div_rstn),
-  o_div_done(o_mul_div_done),
-  o_div_result(div_result)
+  .i_div_srcA(i_mul_div_srcA),
+  .i_div_srcB(i_mul_div_srcB),
+  .i_div_control(i_mul_div_control[1:0]),
+  .i_div_isword(i_mul_div_isword),
+  .i_div_en(i_mul_div_control[2] & i_mul_div_en),
+  .i_div_clk(i_mul_div_clk),
+  .i_div_rstn(i_mul_div_rstn),
+  .o_div_done(o_mul_div_done),
+  .o_div_result(div_result)
 );
 
 riscv_core_mux2x1
