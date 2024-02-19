@@ -7,11 +7,14 @@ module riscv_core_div_out
   input  logic [XLEN-1:0] i_div_out_srcB,
   input  logic [1:0]      i_div_out_control,
   input  logic            i_div_out_isword,
+  input  logic            i_div_out_start,
   input  logic            i_div_out_clk,
   input  logic            i_div_out_rstn,
   input  logic            i_div_out_done,
   input  logic [XLEN-1:0] i_div_out_quotient,
   input  logic [XLEN-1:0] i_div_out_remainder,
+  output logic            o_div_out_overflow,
+  output logic            o_div_out_div_by_zero,
   output logic            o_div_out_done,
   output logic [XLEN-1:0] o_div_out_result
 );
@@ -24,6 +27,9 @@ logic [XLEN-1:0] quotient;
 logic [XLEN-1:0] comp_quotient;
 logic [XLEN-1:0] remainder;
 logic [XLEN-1:0] comp_remainder;
+
+logic div_by_zero;
+logic overflow;
 
 localparam [1:0] DIV    = 2'b00;        
 localparam [1:0] DIVU   = 2'b01;        
@@ -48,6 +54,8 @@ assign comp_remainder = ~i_div_out_remainder + 1;
 
 always_comb
   begin: instr_proc
+    div_by_zero = 1'b0;
+    overflow = 1'b0;
     if (!i_div_out_isword) 
       begin
         case (i_div_out_control)
@@ -56,10 +64,12 @@ always_comb
               if (i_div_out_srcB == 0)
                 begin
                   result = 64'hFFFF_FFFF_FFFF_FFFF;
+                  div_by_zero = 1'b1;
                 end
               else if ((i_div_out_srcA == OVERFLOW_SIGNED_A) & (i_div_out_srcB == OVERFLOW_SIGNED_B))
                 begin
                   result = OVERFLOW_SIGNED_A;
+                  overflow = 1'b1;
                 end
               else
                 begin
@@ -78,6 +88,7 @@ always_comb
               if (i_div_out_srcB == 0)
                 begin
                   result = 64'hFFFF_FFFF_FFFF_FFFF;
+                  div_by_zero = 1'b1;
                 end
               else
                 begin
@@ -89,10 +100,12 @@ always_comb
               if (i_div_out_srcB == 0)
                 begin
                   result = i_div_out_srcA;
+                  div_by_zero = 1'b1;
                 end
               else if (i_div_out_srcA == OVERFLOW_SIGNED_A && i_div_out_srcB == OVERFLOW_SIGNED_B)
                 begin
                   result = 0;
+                  overflow = 1'b1;
                 end
               else
                 begin
@@ -111,6 +124,7 @@ always_comb
               if (i_div_out_srcB == 0)
                 begin
                   result = i_div_out_srcA;
+                  div_by_zero = 1'b1;
                 end
               else
                 begin
@@ -131,10 +145,12 @@ always_comb
               if (i_div_out_srcB == 0)
                 begin
                   result = 64'hFFFF_FFFF_FFFF_FFFF;
+                  div_by_zero = 1'b1;
                 end
               else if (i_div_out_srcA == OVERFLOW_SIGNED_A && i_div_out_srcB == OVERFLOW_SIGNED_B)
                 begin
                   result = OVERFLOW_SIGNED_A;
+                  overflow = 1'b1;
                 end
               else
                 begin
@@ -153,6 +169,7 @@ always_comb
               if (i_div_out_srcB == 0)
                 begin
                   result = 64'hFFFF_FFFF_FFFF_FFFF;
+                  div_by_zero = 1'b1;
                 end
               else
                 begin
@@ -164,10 +181,12 @@ always_comb
               if (i_div_out_srcB == 0)
                 begin
                   result = i_div_out_srcA;
+                  div_by_zero = 1'b1;
                 end
               else if (i_div_out_srcA == OVERFLOW_SIGNED_A && i_div_out_srcB == OVERFLOW_SIGNED_B)
                 begin
                   result = 0;
+                  overflow = 1'b1;
                 end
               else
                 begin
@@ -186,6 +205,7 @@ always_comb
               if (i_div_out_srcB == 0)
                 begin
                   result = i_div_out_srcA;
+                  div_by_zero = 1'b1;
                 end
               else
                 begin
@@ -205,12 +225,30 @@ always_ff @(posedge i_div_out_clk, negedge i_div_out_rstn)
     if (!i_div_out_rstn) 
       begin
         o_div_out_result <= 0;
+        o_div_out_div_by_zero <= 1'b0;
+        o_div_out_overflow <= 1'b0;
         o_div_out_done <= 1'b0;
-      end 
-    else if (i_div_out_done)
+      end
+    else if ((div_by_zero | overflow) & i_div_out_start)
       begin
         o_div_out_result <= result;
         o_div_out_done <= 1'b1;
+        o_div_out_div_by_zero <= div_by_zero;
+        o_div_out_overflow <= overflow;
       end
+    else if (i_div_out_done)
+        begin
+          o_div_out_result <= result;
+          o_div_out_done <= 1'b1;
+          o_div_out_div_by_zero <= 1'b0;
+          o_div_out_overflow <= 1'b0;
+        end
+    else
+      begin
+        o_div_out_done <= 1'b0;
+        o_div_out_div_by_zero <= 1'b0;
+        o_div_out_overflow <= 1'b0;
+      end
+
   end
 endmodule

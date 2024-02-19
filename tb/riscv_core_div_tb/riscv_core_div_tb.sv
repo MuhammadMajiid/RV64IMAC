@@ -13,7 +13,10 @@ logic            i_div_isword;
 logic            i_div_en;
 logic            i_div_clk;
 logic            i_div_rstn;
+logic            o_div_busy;
 logic            o_div_done;
+logic            o_div_overflow;
+logic            o_div_div_by_zero;
 logic [XLEN-1:0] o_div_result;
 
 logic [XLEN-1:0] TEST_SRCA    [TEST_CASES-1:0];
@@ -28,10 +31,10 @@ initial
     $dumpfile("riscv_core_div_tb_DUMP.vcd");       
     $dumpvars;
 
-    $readmemh("D:/RISC-V GP/M-Extension/Divider/64-bit Non-Restoring Divider/TEST_SRCA_h.txt", TEST_SRCA);
-    $readmemh("D:/RISC-V GP/M-Extension/Divider/64-bit Non-Restoring Divider/TEST_SRCB_h.txt", TEST_SRCB);
-    $readmemb("D:/RISC-V GP/M-Extension/Divider/64-bit Non-Restoring Divider/TEST_CTRL_b.txt", TEST_CTRL);
-    $readmemb("D:/RISC-V GP/M-Extension/Divider/64-bit Non-Restoring Divider/TEST_ISWORD_b.txt", TEST_ISWORD);
+    $readmemh("C:/Users/hythe/Desktop/64-bit Non-Restoring Divider/TEST_SRCA_h.txt", TEST_SRCA);
+    $readmemh("C:/Users/hythe/Desktop/64-bit Non-Restoring Divider/TEST_SRCB_h.txt", TEST_SRCB);
+    $readmemb("C:/Users/hythe/Desktop/64-bit Non-Restoring Divider/TEST_CTRL_b.txt", TEST_CTRL);
+    $readmemb("C:/Users/hythe/Desktop/64-bit Non-Restoring Divider/TEST_ISWORD_b.txt", TEST_ISWORD);
     
     initialize();
     reset();
@@ -39,7 +42,7 @@ initial
     for (Operation = 0; Operation < TEST_CASES; Operation = Operation + 1)
       begin
           do_oper(TEST_SRCA[Operation], TEST_SRCB[Operation], TEST_CTRL[Operation], TEST_ISWORD[Operation]);  // do_div_opeartion
-          #(200*CLK_PERIOD);
+          #(CLK_PERIOD);
           check_out(TEST_SRCA[Operation], TEST_SRCB[Operation], TEST_CTRL[Operation], TEST_ISWORD[Operation], Operation);                           // check_div_result
       end
     $stop;
@@ -74,8 +77,8 @@ task do_oper;
     i_div_srcB = srcB;
     i_div_control = ctrl;
     i_div_isword = isword;
-    #(CLK_PERIOD);
-    i_div_en = 1'b0;
+    #(33*CLK_PERIOD);
+    //i_div_en = 1'b0;
   end
 endtask
 
@@ -100,8 +103,7 @@ task check_out;
       begin
         $display("Test Case %0d is failed, gener_result = %h, expec_result = %h",Oper_Num+1, gener_result, expected_result);
       end
-      #(200*CLK_PERIOD);
-      enable = 1'b1;
+      enable = 1'b0;
   end
 endtask
 
@@ -189,7 +191,10 @@ u_riscv_core_div
   .i_div_en(i_div_en),
   .i_div_clk(i_div_clk),
   .i_div_rstn(i_div_rstn),
+  .o_div_busy(o_div_busy),
   .o_div_done(o_div_done),
+  .o_div_overflow(o_div_overflow),
+  .o_div_div_by_zero(o_div_div_by_zero),
   .o_div_result(o_div_result)
 );
 endmodule

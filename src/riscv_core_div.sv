@@ -10,7 +10,10 @@ module riscv_core_div
   input  logic            i_div_en,
   input  logic            i_div_clk,
   input  logic            i_div_rstn,
+  output logic            o_div_busy,
   output logic            o_div_done,
+  output logic            o_div_overflow,
+  output logic            o_div_div_by_zero,
   output logic [XLEN-1:0] o_div_result
 );
 
@@ -19,6 +22,7 @@ logic [XLEN-1:0] divisor;
 logic [XLEN-1:0] quotient;      
 logic [XLEN-1:0] remainder;
 logic            done;
+logic            start;
 
 riscv_core_div_in
 #(
@@ -46,7 +50,9 @@ u_riscv_core_non_restoring
   .i_non_restoring_en(i_div_en),
   .i_non_restoring_clk(i_div_clk),
   .i_non_restoring_rstn(i_div_rstn),
+  .o_non_restoring_busy(o_div_busy),
   .o_non_restoring_done(done),
+  .o_non_restoring_start(start),
   .o_non_restoring_quotient(quotient),
   .o_non_restoring_remainder(remainder)
 );
@@ -62,11 +68,14 @@ u_riscv_core_div_out
   .i_div_out_srcB(i_div_srcB),
   .i_div_out_control(i_div_control),
   .i_div_out_isword(i_div_isword),
+  .i_div_out_start(start),
   .i_div_out_clk(i_div_clk),
   .i_div_out_rstn(i_div_rstn),
   .i_div_out_done(done),
   .i_div_out_quotient(quotient),
   .i_div_out_remainder(remainder),
+  .o_div_out_div_by_zero(o_div_div_by_zero),
+  .o_div_out_overflow(o_div_overflow),
   .o_div_out_done(o_div_done),
   .o_div_out_result(o_div_result)
 );
