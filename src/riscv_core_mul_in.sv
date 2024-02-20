@@ -128,35 +128,35 @@ always_comb
               case (srcA_srcB_word_sign)
                 2'b00:
                   begin
-                    o_mul_in_multiplicand[XLEN/2-1:0] = i_mul_in_srcA[XLEN/2-1:0];
-                    o_mul_in_multiplier[XLEN/2-1:0] = i_mul_in_srcB[XLEN/2-1:0];
+                    o_mul_in_multiplicand = i_mul_in_srcA[XLEN/2-1:0];
+                    o_mul_in_multiplier = i_mul_in_srcB[XLEN/2-1:0];
                   end 
                 2'b01:
                   begin
-                    o_mul_in_multiplicand[XLEN/2-1:0] = i_mul_in_srcA[XLEN/2-1:0];
-                    o_mul_in_multiplier[XLEN/2-1:0] = ~i_mul_in_srcB[XLEN/2-1:0] + 1'b1;
+                    o_mul_in_multiplicand = i_mul_in_srcA[XLEN/2-1:0];
+                    o_mul_in_multiplier = ~i_mul_in_srcB[XLEN/2-1:0] + 1'b1;
                   end
                 2'b10:
                   begin
-                    o_mul_in_multiplicand[XLEN/2-1:0] = ~i_mul_in_srcA[XLEN/2-1:0] + 1'b1;
-                    o_mul_in_multiplier[XLEN/2-1:0] = i_mul_in_srcB[XLEN/2-1:0];
+                    o_mul_in_multiplicand = ~i_mul_in_srcA[XLEN/2-1:0] + 1'b1;
+                    o_mul_in_multiplier = i_mul_in_srcB[XLEN/2-1:0];
                   end
                 2'b11:
                   begin
-                    o_mul_in_multiplicand[XLEN/2-1:0] = ~i_mul_in_srcA[XLEN/2-1:0] + 1'b1;
-                    o_mul_in_multiplier[XLEN/2-1:0] = ~i_mul_in_srcB[XLEN/2-1:0] + 1'b1;
+                    o_mul_in_multiplicand = ~i_mul_in_srcA[XLEN/2-1:0] + 1'b1;
+                    o_mul_in_multiplier = ~i_mul_in_srcB[XLEN/2-1:0] + 1'b1;
                   end
                 default:
                   begin
-                    o_mul_in_multiplicand[XLEN/2-1:0] = i_mul_in_srcA[XLEN/2-1:0];
-                    o_mul_in_multiplier[XLEN/2-1:0] = i_mul_in_srcB[XLEN/2-1:0];
+                    o_mul_in_multiplicand = i_mul_in_srcA[XLEN/2-1:0];
+                    o_mul_in_multiplier = i_mul_in_srcB[XLEN/2-1:0];
                   end
               endcase
             end
           default:
             begin
-              o_mul_in_multiplicand[XLEN/2-1:0] = i_mul_in_srcA[XLEN/2-1:0];
-              o_mul_in_multiplier[XLEN/2-1:0] = i_mul_in_srcB[XLEN/2-1:0];
+              o_mul_in_multiplicand = i_mul_in_srcA[XLEN/2-1:0];
+              o_mul_in_multiplier = i_mul_in_srcB[XLEN/2-1:0];
             end
         endcase
       end
