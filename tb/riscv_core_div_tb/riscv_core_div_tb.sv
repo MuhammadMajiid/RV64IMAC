@@ -77,7 +77,7 @@ task do_oper;
     i_div_srcB = srcB;
     i_div_control = ctrl;
     i_div_isword = isword;
-    #(33*CLK_PERIOD);
+    #(65*CLK_PERIOD);
     //i_div_en = 1'b0;
   end
 endtask
