@@ -103,38 +103,17 @@ always_comb
             begin
               dividend_next[0] = 1'b1;
             end
-
-          ////////////2nd round//////////////
-          if (accumulator_next[XLEN])
-            begin
-              {accumulator_next, dividend_next} = {accumulator_next, dividend_next, 1'b0};
-              accumulator_next = accumulator_next + divisor_reg;
-            end
-          else
-            begin
-              {accumulator_next, dividend_next} = {accumulator_next, dividend_next, 1'b0};
-              accumulator_next = accumulator_next - divisor_reg;
-            end
-          if (accumulator_next[XLEN])
-            begin
-              dividend_next[0] = 1'b0;
-            end
-          else
-            begin
-              dividend_next[0] = 1'b1;
-            end
-
           cnt_next = cnt_reg + 1;
-          if (cnt_reg == (XLEN/2)-1) 
+          if (cnt_reg == XLEN-1) 
             begin
-              if (accumulator_next[XLEN])
+              if (accumulator_reg[XLEN])
                 begin
                   accumulator_next = accumulator_next + divisor_reg;
                 end
               else
                 begin
-                  accumulator_next = accumulator_next;
-                end   
+                  accumulator_next = accumulator_reg;
+                end
               state_next = DONE;
             end
           else
