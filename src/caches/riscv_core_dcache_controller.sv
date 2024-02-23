@@ -2,6 +2,7 @@
 `define INDEX 11:5
 `define BLOCK_OFFSET 4:3
 `define BYTE_OFFSET 2:0
+`define OFFSET 5
 
 
 module riscv_core_dcache_controller #(
@@ -130,7 +131,7 @@ o_block_replace = 0;
 o_fifo_push = 0;
 o_fifo_entry = 'b0;
 o_stall = 0;
-o_addr_from_control_to_axi = i_addr_from_core;
+o_addr_from_control_to_axi = {i_addr_from_core[`TAG] , i_addr_from_core[`INDEX],`OFFSET'b0};
 o_mem_req = 0;
 update_en = 0;
 
@@ -147,7 +148,7 @@ case (STATE)
         o_fifo_push = 0;
         o_fifo_entry = 'b0;
         o_stall = 0;
-        o_addr_from_control_to_axi = i_addr_from_core;
+        o_addr_from_control_to_axi = {i_addr_from_core[`TAG] , i_addr_from_core[`INDEX],`OFFSET'b0};
         o_mem_req = 0;
         update_en = 0;
         
@@ -162,7 +163,7 @@ case (STATE)
 
                     o_stall = 1;
                     o_mem_req = 1;
-                    o_addr_from_control_to_axi = i_addr_from_core;
+                    o_addr_from_control_to_axi = {i_addr_from_core[`TAG] , i_addr_from_core[`INDEX],`OFFSET'b0};
                     NEXT = MEM_REQ;
                 end    
             end
@@ -185,7 +186,7 @@ case (STATE)
 
                     o_stall = 1;
                     o_mem_req = 1;
-                    o_addr_from_control_to_axi = i_addr_from_core;
+                    o_addr_from_control_to_axi = {i_addr_from_core[`TAG] , i_addr_from_core[`INDEX],`OFFSET'b0};
                     NEXT = MEM_REQ;
                 end 
             end      
@@ -202,7 +203,7 @@ case (STATE)
         o_fifo_push = 0;
         o_fifo_entry = 'b0;
         o_stall = 1;
-        o_addr_from_control_to_axi = i_addr_from_core;
+        o_addr_from_control_to_axi = {i_addr_from_core[`TAG] , i_addr_from_core[`INDEX],`OFFSET'b0};
         o_mem_req = 1;
         update_en = 0;
 
@@ -221,7 +222,7 @@ case (STATE)
         o_fifo_push = 0;
         o_fifo_entry = 'b0;
         o_stall = 1;
-        o_addr_from_control_to_axi = i_addr_from_core;
+        o_addr_from_control_to_axi = {i_addr_from_core[`TAG] , i_addr_from_core[`INDEX],`OFFSET'b0};
         o_mem_req = 0;
         update_en = 1;
         NEXT = IDLE;
@@ -236,7 +237,7 @@ case (STATE)
         o_fifo_push = 0;
         o_fifo_entry = 'b0;
         o_stall = 1;
-        o_addr_from_control_to_axi = i_addr_from_core;
+        o_addr_from_control_to_axi = {i_addr_from_core[`TAG] , i_addr_from_core[`INDEX],`OFFSET'b0};
         o_mem_req = 0;
         update_en = 0;
         
@@ -253,7 +254,7 @@ case (STATE)
         o_fifo_push = 0;
         o_fifo_entry = 'b0;
         o_stall = 0;
-        o_addr_from_control_to_axi = i_addr_from_core;
+        o_addr_from_control_to_axi = {i_addr_from_core[`TAG] , i_addr_from_core[`INDEX],`OFFSET'b0};
         o_mem_req = 0;
         update_en = 0;
         NEXT = IDLE;
