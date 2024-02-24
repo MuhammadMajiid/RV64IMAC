@@ -2,6 +2,7 @@ module riscv_core_alu_decoder (
     input logic [2:0] i_alu_decoder_funct3,
     input logic       i_alu_decoder_aluop,
     input logic       i_alu_decoder_funct7_5,
+    input logic       i_alu_decoder_funct7_0,
     input logic       i_alu_decoder_opcode_5,
     output logic [3:0] o_alu_decoder_alucontrol
 
@@ -17,7 +18,30 @@ case (i_alu_decoder_aluop)
     1'b0   : control_signals = 4'b0000; // lw,sw,jal,jalr,lui,auipc
 
     1'b1   : begin
-                   case (i_alu_decoder_funct3)
+                   if (i_alu_decoder_funct7_0) begin
+
+
+                    if (!i_alu_decoder_funct7_5 && i_alu_decoder_opcode_5) // "M" extension
+                    begin
+                    case (i_alu_decoder_funct3)
+                        3'h0: control_signals = 4'b0000;
+                        3'h1: control_signals = 4'b0001;
+                        3'h2: control_signals = 4'b0010;
+                        3'h3: control_signals = 4'b0011;
+                        3'h4: control_signals = 4'b0100;
+                        3'h5: control_signals = 4'b0101;
+                        3'h6: control_signals = 4'b0110;
+                        3'h7: control_signals = 4'b0111;
+                        default: control_signals = 4'b0000;
+                    endcase
+                   end
+
+
+
+                   end
+                   else
+                   begin
+                    case (i_alu_decoder_funct3)
                     3'h0: begin // and , sub , andi
                                if (i_alu_decoder_funct7_5 && i_alu_decoder_opcode_5) // sub
                                begin
@@ -42,6 +66,7 @@ case (i_alu_decoder_aluop)
                     3'h7: control_signals=4'b0010; // and , andi     
                     default: control_signals = 4'b0000;
                    endcase
+                   end
              end
     default: control_signals=4'b0000;
 endcase
