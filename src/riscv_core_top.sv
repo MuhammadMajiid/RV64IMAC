@@ -46,7 +46,7 @@ logic [63:0] rd2_id;
 logic [63:0] immext_id;
 logic [3:0]  alu_control_id;
 logic [2:0]  immsrc_id;
-logic [1:0] resultsrc_id;
+logic [1:0]  resultsrc_id;
 logic [1:0]  size_id;
 logic        alu_op_id;
 logic        uctrl_id;
@@ -59,6 +59,8 @@ logic        ldext_id;
 logic        isword_id;
 logic        bjreg_id;
 logic        id_ex_pipe_bjreg;
+logic        im_sel_id;
+logic        id_ex_pipe_im_sel;
 
 //-------------EX Intermediate Signals-------------//
 logic [63:0] ex_mem_pipe_alu_result;
@@ -600,6 +602,20 @@ u_riscv_core_pipe_isword_id_ex
   ,.o_pipe_out   (id_ex_pipe_isword)
 );
 
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_imul_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_in    (im_sel_id)
+  ,.o_pipe_out   (id_ex_pipe_im_sel)
+);
+
 //----------------------------------//
 //-------------EX Stage-------------//
 //----------------------------------//
@@ -666,7 +682,7 @@ riscv_core_mul_div
   ,.i_mul_div_srcB       (src_b_out)
   ,.i_mul_div_control    (id_ex_pipe_alu_control)
   ,.i_mul_div_isword     (id_ex_pipe_isword)
-  ,.i_mul_div_en         () // is_MulE
+  ,.i_mul_div_en         (id_ex_pipe_im_sel) // is_MulE
   ,.o_mul_div_result     (m_ext_res)
   ,.o_mul_div_busy       (m_ext_busy)
   ,.o_mul_div_done       (m_ext_done)
@@ -682,7 +698,7 @@ u_riscv_core_mux2x1_arith_out
 (
   .i_mux2x1_in0 (m_ext_res) // M out
   ,.i_mux2x1_in1(alu_result_ex)
-  ,.i_mux2x1_sel() // is_mulE
+  ,.i_mux2x1_sel(id_ex_pipe_im_sel) // is_mulE
   ,.o_mux2x1_out(arith_result_ex) 
 );
 
