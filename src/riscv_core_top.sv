@@ -75,10 +75,16 @@ logic [63:0] src_a_ex;
 logic [63:0] src_b_ex;
 logic [63:0] src_b_out;
 logic [63:0] alu_result_ex;
+logic [63:0] m_ext_res;
+logic [63:0] arith_result_ex;
 logic [63:0] pc_plus_imm;
 logic [63:0] auipc;
 logic        istaken_ex;
 logic        pcsrc_ex;
+logic        m_ext_done;
+logic        m_ext_busy;
+logic        m_ext_divby0;
+logic        m_ext_of;
 
 //-------------MEM Intermediate Signals------------//
 logic [63:0] read_data_mem;
@@ -100,6 +106,7 @@ logic        hu_stall_if;
 logic        hu_stall_id;
 logic        hu_flush_id;
 logic        hu_flush_ex;
+logic        hu_exception;
 
 //----------------------------------//
 //-------------IF Stage-------------//
@@ -648,6 +655,37 @@ u_riscv_core_alu
   ,.o_alu_result (alu_result_ex)
 );
 
+riscv_core_mul_div
+#(
+  .XLEN(64)
+)
+(
+  .i_mul_div_clk         (i_riscv_core_clk)
+  ,.i_mul_div_rstn       (i_riscv_core_rst_n)
+  ,.i_mul_div_srcA       (src_a_ex)
+  ,.i_mul_div_srcB       (src_b_out)
+  ,.i_mul_div_control    (id_ex_pipe_alu_control)
+  ,.i_mul_div_isword     (id_ex_pipe_isword)
+  ,.i_mul_div_en         () // is_MulE
+  ,.o_mul_div_result     (m_ext_res)
+  ,.o_mul_div_busy       (m_ext_busy)
+  ,.o_mul_div_done       (m_ext_done)
+  ,.o_mul_div_overflow   (m_ext_of)
+  ,.o_mul_div_div_by_zero(m_ext_divby0)
+);
+
+riscv_core_mux2x1
+#(
+  .XLEN (64)
+)
+u_riscv_core_mux2x1_arith_out
+(
+  .i_mux2x1_in0 (m_ext_res) // M out
+  ,.i_mux2x1_in1(alu_result_ex)
+  ,.i_mux2x1_sel() // is_mulE
+  ,.o_mux2x1_out(arith_result_ex) 
+);
+
 riscv_core_branch_unit
 #(
   .XLEN (64)
@@ -707,7 +745,7 @@ u_riscv_core_pipe_alu_result_ex_mem
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
   ,.i_pipe_en_n  (1'b0)
-  ,.i_pipe_in    (alu_result_ex)
+  ,.i_pipe_in    (arith_result_ex)
   ,.o_pipe_out   (ex_mem_pipe_alu_result)
 );
 
@@ -1000,8 +1038,15 @@ u_riscv_core_hazard_unit
     // Control signals inputs
     ,.i_hazard_unit_regwrite_mem  (ex_mem_pipe_regwrite)
     ,.i_hazard_unit_regwrite_wb   (mem_wb_pipe_regwrite)
-    ,.i_hazard_unit_resultsrc_ex (id_ex_pipe_resultsrc)
+    ,.i_hazard_unit_resultsrc_ex  (id_ex_pipe_resultsrc)
     ,.i_hazard_unit_pcsrc_ex      (pcsrc_ex)
+    // C Extension
+    ,.i_hazard_unit_illegal_instr (instr_is_illegal)
+    // M Extension
+    ,.i_hazard_unit_mdone         (m_ext_done)
+    ,.i_hazard_unit_mbusy         (m_ext_busy)
+    ,.i_hazard_unit_mdivby0        (m_ext_divby0)
+    ,.i_hazard_unit_mof            (m_ext_of)
     // Forwarding outputs
     ,.o_hazard_unit_forwarda_ex   (hu_forward_a)
     ,.o_hazard_unit_forwardb_ex   (hu_forward_b)
@@ -1011,6 +1056,8 @@ u_riscv_core_hazard_unit
     // Flush outputs
     ,.o_hazard_unit_flush_id      (hu_flush_id)
     ,.o_hazard_unit_flush_ex      (hu_flush_ex)
+    // Exceptions
+    ,.o_exception                 (hu_exception)
 );
 //----------------------------------//
 

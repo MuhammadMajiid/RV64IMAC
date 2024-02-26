@@ -18,6 +18,15 @@ module riscv_core_hazard_unit
     input logic [1:0] i_hazard_unit_resultsrc_ex,
     input logic i_hazard_unit_pcsrc_ex,
 
+    // C Extension input
+    input logic i_hazard_unit_illegal_instr,
+
+    // M Extension inputs
+    input logic i_hazard_unit_mdone,
+    input logic i_hazard_unit_mbusy,
+    input logic i_hazard_unit_mdivby0,
+    input logic i_hazard_unit_mof,
+
     // Forwarding outputs
     output logic [1:0] o_hazard_unit_forwarda_ex,
     output logic [1:0] o_hazard_unit_forwardb_ex,
@@ -25,14 +34,19 @@ module riscv_core_hazard_unit
     // Stall outputs
     output logic o_hazard_unit_stall_if,
     output logic o_hazard_unit_stall_id,
+    output logic o_hazard_unit_stall_ex,
 
     // Flush outputs
     output logic o_hazard_unit_flush_id,
-    output logic o_hazard_unit_flush_ex
+    output logic o_hazard_unit_flush_ex,
+
+    // Exceptions
+    output logic o_hazard_unit_exception
 );
 
 // Internals
 logic lwstall_detection;
+logic mstall_detection;
 
 //------------------------------Forwarding------------------------------\\
 
@@ -74,8 +88,10 @@ end
 always_comb 
 begin : stall_proc
     lwstall_detection = ((i_hazard_unit_resultsrc_ex == 2'b01) && ((i_hazard_unit_rs1_id == i_hazard_unit_rd_ex) || (i_hazard_unit_rs2_id == i_hazard_unit_rd_ex)));
-    o_hazard_unit_stall_if = lwstall_detection;
-    o_hazard_unit_stall_id = lwstall_detection;
+    mstall_detection  = (i_hazard_unit_mbusy && !i_hazard_unit_mdone);
+    o_hazard_unit_stall_if = lwstall_detection || mstall_detection;
+    o_hazard_unit_stall_id = lwstall_detection || mstall_detection;
+    o_hazard_unit_stall_ex = lwstall_detection || mstall_detection;
 end
 
 //---------------------------------Flush---------------------------------\\
@@ -86,4 +102,8 @@ begin : flush_proc
     o_hazard_unit_flush_id = i_hazard_unit_pcsrc_ex;
 end
 
+//---------------------------------Exceptions---------------------------------\\
+always_comb begin : exceptions_proc
+    o_hazard_unit_exception = (i_hazard_unit_illegal_instr || i_hazard_unit_mdivby0 || i_hazard_unit_mof);
+end
 endmodule
