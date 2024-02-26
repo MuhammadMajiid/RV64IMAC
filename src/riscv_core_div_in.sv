@@ -7,6 +7,7 @@ module riscv_core_div_in
   input  logic [XLEN-1:0] i_div_in_srcB,
   input  logic [1:0]      i_div_in_control,
   input  logic            i_div_in_isword,
+  output logic [6:0]      o_div_in_fast,
   output logic [XLEN-1:0] o_div_in_dividend,
   output logic [XLEN-1:0] o_div_in_divisor
 );
@@ -26,6 +27,8 @@ localparam [1:0] REMUW  = 2'b11;
 
 assign srcA_srcB_sign = {i_div_in_srcA[XLEN-1], i_div_in_srcB[XLEN-1]};
 assign srcA_srcB_word_sign = {i_div_in_srcA[XLEN/2-1], i_div_in_srcB[XLEN/2-1]};
+
+assign o_div_in_fast = {(i_div_in_srcB == -1), (i_div_in_srcB == 0), (i_div_in_srcB == 1), (i_div_in_srcA == -1), (i_div_in_srcA == 0), (i_div_in_srcA == 1), (i_div_in_srcA == 64'h8000_0000_0000_0000)&(i_div_in_srcB == -1)};
 
 always_comb
   begin: instr_proc
