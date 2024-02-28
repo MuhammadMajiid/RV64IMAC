@@ -263,6 +263,7 @@ u_riscv_core_main_decoder
 (
   .i_main_decoder_opcode     (if_id_pipe_instr[6:0])
   ,.i_main_decoder_funct3    (if_id_pipe_instr[14:12])
+  ,.i_main_decoder_funct7    (if_id_pipe_instr[31:25])
   ,.o_main_decoder_imsrc     (immsrc_id)
   ,.o_main_decoder_UCtrl     (uctrl_id)
   ,.o_main_decoder_resultsrc (resultsrc_id)
@@ -276,6 +277,7 @@ u_riscv_core_main_decoder
   ,.o_main_decoder_isword    (isword_id)
   ,.o_main_decoder_bjreg     (bjreg_id)
   ,.o_main_decoder_aluop     (alu_op_id)
+  ,.o_main_decoder_imsel     (im_sel_id)
 );
 
 riscv_core_rf
@@ -675,6 +677,7 @@ riscv_core_mul_div
 #(
   .XLEN(64)
 )
+u_riscv_core_mul_div
 (
   .i_mul_div_clk         (i_riscv_core_clk)
   ,.i_mul_div_rstn       (i_riscv_core_rst_n)
@@ -696,8 +699,8 @@ riscv_core_mux2x1
 )
 u_riscv_core_mux2x1_arith_out
 (
-  .i_mux2x1_in0 (m_ext_res) // M out
-  ,.i_mux2x1_in1(alu_result_ex)
+  .i_mux2x1_in0 (alu_result_ex) 
+  ,.i_mux2x1_in1(m_ext_res)// M out
   ,.i_mux2x1_sel(id_ex_pipe_im_sel) // is_mulE
   ,.o_mux2x1_out(arith_result_ex) 
 );
@@ -1073,7 +1076,7 @@ u_riscv_core_hazard_unit
     ,.o_hazard_unit_flush_id      (hu_flush_id)
     ,.o_hazard_unit_flush_ex      (hu_flush_ex)
     // Exceptions
-    ,.o_exception                 (hu_exception)
+    ,.o_hazard_unit_exception     (hu_exception)
 );
 //----------------------------------//
 
