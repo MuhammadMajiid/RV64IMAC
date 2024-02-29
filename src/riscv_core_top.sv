@@ -106,9 +106,13 @@ logic [1:0]  hu_forward_a;
 logic [1:0]  hu_forward_b;
 logic        hu_stall_if;
 logic        hu_stall_id;
+logic        hu_stall_ex;
+logic        hu_stall_mem;
+logic        hu_stall_wb;
 logic        hu_flush_id;
 logic        hu_flush_ex;
 logic        hu_exception;
+
 
 //----------------------------------//
 //-------------IF Stage-------------//
@@ -315,7 +319,7 @@ u_riscv_core_pipe_rf_rd1_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (rd1_id)
   ,.o_pipe_out   (id_ex_pipe_rd1)
 );
@@ -329,7 +333,7 @@ u_riscv_core_pipe_rf_rd2_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (rd2_id)
   ,.o_pipe_out   (id_ex_pipe_rd2)
 );
@@ -343,7 +347,7 @@ u_riscv_core_pipe_funct3_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (if_id_pipe_instr[14:12]) // funct3
   ,.o_pipe_out   (id_ex_pipe_funct3)
 );
@@ -357,7 +361,7 @@ u_riscv_core_pipe_pc_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (if_id_pipe_pc)
   ,.o_pipe_out   (id_ex_pipe_pc)
 );
@@ -371,7 +375,7 @@ u_riscv_core_pipe_rs1_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (if_id_pipe_instr[19:15]) // rs1D
   ,.o_pipe_out   (id_ex_pipe_rs1)
 );
@@ -385,7 +389,7 @@ u_riscv_core_pipe_rs2_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (if_id_pipe_instr[24:20]) // rs2D
   ,.o_pipe_out   (id_ex_pipe_rs2)
 );
@@ -399,7 +403,7 @@ u_riscv_core_pipe_rd_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (if_id_pipe_instr[11:7]) // rdD
   ,.o_pipe_out   (id_ex_pipe_rd)
 );
@@ -413,7 +417,7 @@ u_riscv_core_pipe_pc_plus_offset_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (if_id_pipe_pc_plus_offset) // (pc+4)D
   ,.o_pipe_out   (id_ex_pipe_pc_plus_offset)
 );
@@ -427,7 +431,7 @@ u_riscv_core_pipe_immext_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (immext_id)
   ,.o_pipe_out   (id_ex_pipe_imm)
 );
@@ -442,7 +446,7 @@ u_riscv_core_pipe_resultsrc_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (resultsrc_id)
   ,.o_pipe_out   (id_ex_pipe_resultsrc)
 );
@@ -456,7 +460,7 @@ u_riscv_core_pipe_size_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (size_id)
   ,.o_pipe_out   (id_ex_pipe_size)
 );
@@ -470,7 +474,7 @@ u_riscv_core_pipe_alucontrol_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (alu_control_id)
   ,.o_pipe_out   (id_ex_pipe_alu_control)
 );
@@ -484,7 +488,7 @@ u_riscv_core_pipe_bjreg_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (bjreg_id)
   ,.o_pipe_out   (id_ex_pipe_bjreg)
 );
@@ -498,7 +502,7 @@ u_riscv_core_pipe_regwrite_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (regwrite_id)
   ,.o_pipe_out   (id_ex_pipe_regwrite)
 );
@@ -512,7 +516,7 @@ u_riscv_core_pipe_branch_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (branch_id)
   ,.o_pipe_out   (id_ex_pipe_branch)
 );
@@ -526,7 +530,7 @@ u_riscv_core_pipe_jump_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (jump_id)
   ,.o_pipe_out   (id_ex_pipe_jump)
 );
@@ -541,7 +545,7 @@ u_riscv_core_pipe_memwrite_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (memwrite_id)
   ,.o_pipe_out   (id_ex_pipe_memwrite)
 );
@@ -555,7 +559,7 @@ u_riscv_core_pipe_alusrc_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (alusrc_id)
   ,.o_pipe_out   (id_ex_pipe_alu_srcb)
 );
@@ -569,7 +573,7 @@ u_riscv_core_pipe_ldext_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (ldext_id)
   ,.o_pipe_out   (id_ex_pipe_ldext)
 );
@@ -583,7 +587,7 @@ u_riscv_core_pipe_uctrl_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (uctrl_id)
   ,.o_pipe_out   (id_ex_pipe_uctrl)
 );
@@ -597,7 +601,7 @@ u_riscv_core_pipe_isword_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (isword_id)
   ,.o_pipe_out   (id_ex_pipe_isword)
 );
@@ -611,7 +615,7 @@ u_riscv_core_pipe_imul_id_ex
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (im_sel_id)
   ,.o_pipe_out   (id_ex_pipe_im_sel)
 );
@@ -760,7 +764,7 @@ u_riscv_core_pipe_alu_result_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_mem)
   ,.i_pipe_in    (arith_result_ex)
   ,.o_pipe_out   (ex_mem_pipe_alu_result)
 );
@@ -774,7 +778,7 @@ u_riscv_core_pipe_wd_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_mem)
   ,.i_pipe_in    (src_b_out)
   ,.o_pipe_out   (ex_mem_pipe_wd)
 );
@@ -788,7 +792,7 @@ u_riscv_core_pipe_auipc_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_mem)
   ,.i_pipe_in    (auipc)
   ,.o_pipe_out   (ex_mem_pipe_auipc)
 );
@@ -802,7 +806,7 @@ u_riscv_core_pipe_rd_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_mem)
   ,.i_pipe_in    (id_ex_pipe_rd)
   ,.o_pipe_out   (ex_mem_pipe_rd)
 );
@@ -816,7 +820,7 @@ u_riscv_core_pipe_pc_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_mem)
   ,.i_pipe_in    (id_ex_pipe_pc_plus_offset)
   ,.o_pipe_out   (ex_mem_pipe_pc_plus_offset)
 );
@@ -831,7 +835,7 @@ u_riscv_core_pipe_resultsrc_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_mem)
   ,.i_pipe_in    (id_ex_pipe_resultsrc)
   ,.o_pipe_out   (ex_mem_pipe_resultsrc)
 );
@@ -845,7 +849,7 @@ u_riscv_core_pipe_memwrite_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_mem)
   ,.i_pipe_in    (id_ex_pipe_memwrite)
   ,.o_pipe_out   (ex_mem_pipe_memwrite)
 );
@@ -859,7 +863,7 @@ u_riscv_core_pipe_size_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_mem)
   ,.i_pipe_in    (id_ex_pipe_size)
   ,.o_pipe_out   (ex_mem_pipe_size)
 );
@@ -873,7 +877,7 @@ u_riscv_core_pipe_ldext_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_mem)
   ,.i_pipe_in    (id_ex_pipe_ldext)
   ,.o_pipe_out   (ex_mem_pipe_ldext)
 );
@@ -887,7 +891,7 @@ u_riscv_core_pipe_regwrite_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_mem)
   ,.i_pipe_in    (id_ex_pipe_regwrite)
   ,.o_pipe_out   (ex_mem_pipe_regwrite)
 );
@@ -928,7 +932,7 @@ u_riscv_core_pipe_alu_result_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_wb)
   ,.i_pipe_in    (ex_mem_pipe_alu_result)
   ,.o_pipe_out   (mem_wb_pipe_alu_result)
 );
@@ -942,7 +946,7 @@ u_riscv_core_pipe_read_data_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_wb)
   ,.i_pipe_in    (read_data_mem)
   ,.o_pipe_out   (mem_wb_pipe_read_data)
 );
@@ -956,7 +960,7 @@ u_riscv_core_pipe_auipc_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_wb)
   ,.i_pipe_in    (ex_mem_pipe_auipc)
   ,.o_pipe_out   (mem_wb_pipe_auipc)
 );
@@ -970,7 +974,7 @@ u_riscv_core_pipe_pc_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_wb)
   ,.i_pipe_in    (ex_mem_pipe_pc_plus_offset)
   ,.o_pipe_out   (mem_wb_pipe_pc_plus_offset)
 );
@@ -984,7 +988,7 @@ u_riscv_core_pipe_rd_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_wb)
   ,.i_pipe_in    (ex_mem_pipe_rd)
   ,.o_pipe_out   (mem_wb_pipe_rd)
 );
@@ -999,7 +1003,7 @@ u_riscv_core_pipe_resultsrc_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_wb)
   ,.i_pipe_in    (ex_mem_pipe_resultsrc)
   ,.o_pipe_out   (mem_wb_pipe_resultsrc)
 );
@@ -1013,7 +1017,7 @@ u_riscv_core_pipe_regwrite_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (1'b0)
+  ,.i_pipe_en_n  (hu_hazard_wb)
   ,.i_pipe_in    (ex_mem_pipe_regwrite)
   ,.o_pipe_out   (mem_wb_pipe_regwrite)
 );
@@ -1061,14 +1065,17 @@ u_riscv_core_hazard_unit
     // M Extension
     ,.i_hazard_unit_mdone         (m_ext_done)
     ,.i_hazard_unit_mbusy         (m_ext_busy)
-    ,.i_hazard_unit_mdivby0        (m_ext_divby0)
-    ,.i_hazard_unit_mof            (m_ext_of)
+    ,.i_hazard_unit_mdivby0       (m_ext_divby0)
+    ,.i_hazard_unit_mof           (m_ext_of)
     // Forwarding outputs
     ,.o_hazard_unit_forwarda_ex   (hu_forward_a)
     ,.o_hazard_unit_forwardb_ex   (hu_forward_b)
     // Stall outputs
     ,.o_hazard_unit_stall_if      (hu_stall_if)
     ,.o_hazard_unit_stall_id      (hu_stall_id)
+    ,.o_hazard_unit_stall_ex      (hu_stall_ex)
+    ,.o_hazard_unit_stall_mem     (hu_stall_mem)
+    ,.o_hazard_unit_stall_wb      (hu_stall_wb)
     // Flush outputs
     ,.o_hazard_unit_flush_id      (hu_flush_id)
     ,.o_hazard_unit_flush_ex      (hu_flush_ex)
