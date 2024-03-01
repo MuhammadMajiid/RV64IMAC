@@ -15,7 +15,8 @@ module riscv_core_main_decoder (
     output logic       o_main_decoder_LdExt,
     output logic       o_main_decoder_isword,
     output logic       o_main_decoder_aluop,
-    output logic       o_main_decoder_imsel
+    output logic       o_main_decoder_imsel,
+    output logic       o_main_decoder_new_mux_sel
 );
 
 logic [17:0] control_signals;
@@ -86,8 +87,8 @@ case (i_main_decoder_opcode)
    7'b1100011:  control_signals = 18'b0_010_0_1_0_00_1_0_00_0_0_0_0_0;  // B-Type
    7'b1101111:  control_signals = 18'b1_011_0_1_0_10_0_0_00_0_0_1_0_0; // jal
    7'b1100111:  control_signals = 18'b1_000_0_1_0_10_0_0_00_0_0_1_1_0; // jalr
-   7'b0110111:  control_signals = 18'b1_100_1_1_0_11_0_0_00_0_0_0_0_0; // lui
-   7'b0010111:  control_signals = 18'b1_100_0_1_0_11_0_0_00_0_0_0_0_0; // auipc
+   7'b0110111:  control_signals = 18'b1_100_1_1_0_00_0_0_00_0_0_0_0_0; // lui
+   7'b0010111:  control_signals = 18'b1_100_0_1_0_00_0_0_00_0_0_0_0_0; // auipc
 
     default   :  control_signals = 18'b0_000_0_0_0_00_0_0_00_0_0_0_0_0; // Default Case     
 endcase
@@ -95,4 +96,40 @@ endcase
 
 
 end
+
+
+
+//////////////////////////
+/// NEW MUX SEL LOGIC ////
+//////////////////////////
+
+always_comb begin : NEW_MUX_SEL_signal_proc
+
+o_main_decoder_new_mux_sel = 0;
+
+case (i_main_decoder_opcode)
+
+
+   7'b0110011:   o_main_decoder_new_mux_sel = 0;
+   7'b0111011:   o_main_decoder_new_mux_sel = 0;
+   7'b0010011:   o_main_decoder_new_mux_sel = 0; // I-Type except word instructions
+
+   7'b0011011:   o_main_decoder_new_mux_sel = 0; // I-Type for word instructions
+ 
+   7'b0000011:   o_main_decoder_new_mux_sel = 0;
+   7'b0100011:   o_main_decoder_new_mux_sel = 0;
+   7'b1100011:   o_main_decoder_new_mux_sel = 1; // B-Type
+   7'b1101111:   o_main_decoder_new_mux_sel = 1; // jal
+   7'b1100111:   o_main_decoder_new_mux_sel = 1; // jalr
+   7'b0110111:   o_main_decoder_new_mux_sel = 1; // lui
+   7'b0010111:   o_main_decoder_new_mux_sel = 1; // auipc
+
+    default   :  o_main_decoder_new_mux_sel = 0; // Default Case     
+endcase
+
+
+
+end
+
+
 endmodule
