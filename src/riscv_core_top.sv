@@ -258,6 +258,7 @@ u_riscv_core_alu_decoder
   .i_alu_decoder_funct3     (if_id_pipe_instr[14:12])
   ,.i_alu_decoder_aluop     (alu_op_id)
   ,.i_alu_decoder_funct7_5  (if_id_pipe_instr[30])
+  ,.i_alu_decoder_funct7_0  (if_id_pipe_instr[25])
   ,.i_alu_decoder_opcode_5  (if_id_pipe_instr[5])
   ,.o_alu_decoder_alucontrol(alu_control_id)
 );
@@ -767,7 +768,7 @@ u_riscv_core_pipe_alu_result_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (arith_result_ex)
   ,.o_pipe_out   (ex_mem_pipe_alu_result)
 );
@@ -781,7 +782,7 @@ u_riscv_core_pipe_wd_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (src_b_out)
   ,.o_pipe_out   (ex_mem_pipe_wd)
 );
@@ -795,7 +796,7 @@ u_riscv_core_pipe_auipc_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (auipc)
   ,.o_pipe_out   (ex_mem_pipe_auipc)
 );
@@ -809,7 +810,7 @@ u_riscv_core_pipe_rd_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_rd)
   ,.o_pipe_out   (ex_mem_pipe_rd)
 );
@@ -823,7 +824,7 @@ u_riscv_core_pipe_pc_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_pc_plus_offset)
   ,.o_pipe_out   (ex_mem_pipe_pc_plus_offset)
 );
@@ -838,7 +839,7 @@ u_riscv_core_pipe_resultsrc_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_resultsrc)
   ,.o_pipe_out   (ex_mem_pipe_resultsrc)
 );
@@ -852,7 +853,7 @@ u_riscv_core_pipe_memwrite_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_memwrite)
   ,.o_pipe_out   (ex_mem_pipe_memwrite)
 );
@@ -866,7 +867,7 @@ u_riscv_core_pipe_size_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_size)
   ,.o_pipe_out   (ex_mem_pipe_size)
 );
@@ -880,7 +881,7 @@ u_riscv_core_pipe_ldext_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_ldext)
   ,.o_pipe_out   (ex_mem_pipe_ldext)
 );
@@ -894,7 +895,7 @@ u_riscv_core_pipe_regwrite_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_regwrite)
   ,.o_pipe_out   (ex_mem_pipe_regwrite)
 );
@@ -935,7 +936,7 @@ u_riscv_core_pipe_alu_result_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_alu_result)
   ,.o_pipe_out   (mem_wb_pipe_alu_result)
 );
@@ -949,7 +950,7 @@ u_riscv_core_pipe_read_data_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (read_data_mem)
   ,.o_pipe_out   (mem_wb_pipe_read_data)
 );
@@ -963,7 +964,7 @@ u_riscv_core_pipe_auipc_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_auipc)
   ,.o_pipe_out   (mem_wb_pipe_auipc)
 );
@@ -977,7 +978,7 @@ u_riscv_core_pipe_pc_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_pc_plus_offset)
   ,.o_pipe_out   (mem_wb_pipe_pc_plus_offset)
 );
@@ -991,7 +992,7 @@ u_riscv_core_pipe_rd_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_rd)
   ,.o_pipe_out   (mem_wb_pipe_rd)
 );
@@ -1006,7 +1007,7 @@ u_riscv_core_pipe_resultsrc_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_resultsrc)
   ,.o_pipe_out   (mem_wb_pipe_resultsrc)
 );
@@ -1020,7 +1021,7 @@ u_riscv_core_pipe_regwrite_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_regwrite)
   ,.o_pipe_out   (mem_wb_pipe_regwrite)
 );
