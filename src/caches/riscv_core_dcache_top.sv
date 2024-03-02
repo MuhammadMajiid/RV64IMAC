@@ -7,11 +7,10 @@
 module riscv_core_dcache_top#(
     parameter BLOCK_OFFSET      = 2,
     parameter INDEX_WIDTH       = 7,
-    parameter TAG_WIDTH         = 52,
+    parameter TAG_WIDTH         = 20,
     parameter CORE_DATA_WIDTH   = 64,
     parameter ADDR_WIDTH        = 64,
-    parameter AXI_DATA_WIDTH    = 256,
-    parameter FIFO_ENTRY_WIDTH  = 128
+    parameter AXI_DATA_WIDTH    = 256
 ) (
 
 
@@ -26,22 +25,27 @@ module riscv_core_dcache_top#(
     input logic           [  1 :  0  ]  i_size,
     output logic                        o_stall,
     output logic [ CORE_DATA_WIDTH-1  :  0  ]  o_data_to_core,
+    output logic                        o_store_fault,
+    output logic                        o_load_fault,
 
 
 
 
-    // Interface with AXI Module //
+   // Interface with AXI READ CHANNEL //
 
-    output logic [ADDR_WIDTH-1     : 0] o_addr_from_control_to_axi,
-    output logic                        o_mem_req,
-    input  logic                        i_mem_done,
+    output logic [ADDR_WIDTH-1     : 0] o_mem_read_address,
+    output logic                        o_mem_read_req,
+    input  logic                        i_mem_read_done,
     input  logic [AXI_DATA_WIDTH-1 : 0] i_block_from_axi,
     
-    // Interface with FIFO      //
+    // Interface with AXI WRITE CHANNEL //
 
-    input logic                           i_fifo_full,
-    output logic                          o_fifo_push,
-    output logic [FIFO_ENTRY_WIDTH-1 : 0] o_fifo_entry
+    input logic                           i_mem_write_done,
+    output logic                          o_mem_write_valid,
+    output logic [CORE_DATA_WIDTH-1 : 0]  o_mem_write_data,
+    output logic [     ADDR_WIDTH-1 : 0]  o_mem_write_address,
+    output logic [                7 : 0]  o_mem_write_strobe
+   
 
 
 
@@ -62,7 +66,7 @@ logic                         control_to_mem_block_replace;
 //      BLOCK INSTANTIATION   //
 ////////////////////////////////
 
-riscv_core_dcache_controller dcache_controller (
+riscv_core_dcache_controller #(.TAG_WIDTH(TAG_WIDTH)) dcache_controller (
     .i_clk(i_clk),
     .i_rst_n(i_rst_n),
     .i_data_from_core (i_data_from_core),
@@ -73,15 +77,20 @@ riscv_core_dcache_controller dcache_controller (
     .o_rd_en(control_to_mem_rd_en),
     .o_wr_en(control_to_mem_wr_en),
     .o_block_replace(control_to_mem_block_replace),
-    .o_addr_from_control_to_axi(o_addr_from_control_to_axi),
-    .o_mem_req(o_mem_req),
-    .i_mem_done(i_mem_done),
-    .i_fifo_full(i_fifo_full),
-    .o_fifo_push(o_fifo_push),
-    .o_fifo_entry(o_fifo_entry) );
+    .o_mem_read_address(o_mem_read_address),
+    .o_mem_read_req(o_mem_read_req),
+    .i_mem_read_done(i_mem_read_done),
+    .i_mem_write_done(i_mem_write_done),
+    .o_mem_write_valid(o_mem_write_valid),
+    .o_mem_write_address(o_mem_write_address),
+    .o_mem_write_data(o_mem_write_data),
+    .o_mem_write_strobe(o_mem_write_strobe),
+    .o_store_fault(o_store_fault),
+    .o_load_fault(o_load_fault),
+    .i_size(i_size));
     
     
-riscv_core_dcache_memory dcache_memory (
+riscv_core_dcache_memory #(.TAG_WIDTH(TAG_WIDTH)) dcache_memory (
     .i_clk(i_clk),
     .i_rst_n(i_rst_n),
     .i_data_from_core (i_data_from_core),
