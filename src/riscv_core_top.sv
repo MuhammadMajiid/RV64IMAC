@@ -84,11 +84,12 @@ logic        bjreg_id;
 logic        id_ex_pipe_bjreg;
 logic        im_sel_id;
 logic        id_ex_pipe_im_sel;
+logic        new_mux_sel_id;
+logic        id_ex_pipe_new_mux_sel;
 
 //-------------EX Intermediate Signals-------------//
 logic [63:0] ex_mem_pipe_alu_result;
 logic [63:0] ex_mem_pipe_wd;
-logic [63:0] ex_mem_pipe_auipc;
 logic [63:0] ex_mem_pipe_pc_plus_offset;
 logic [4:0]  ex_mem_pipe_rd;
 logic [1:0]  ex_mem_pipe_resultsrc;
@@ -111,11 +112,12 @@ logic        m_ext_busy;
 logic        m_ext_divby0;
 logic        m_ext_of;
 
+logic [63:0] new_mux_out;
+
 //-------------MEM Intermediate Signals------------//
 logic [63:0] read_data_mem;
 logic [63:0] mem_wb_pipe_alu_result;
 logic [63:0] mem_wb_pipe_read_data;
-logic [63:0] mem_wb_pipe_auipc;
 logic [63:0] mem_wb_pipe_pc_plus_offset;
 logic [4:0]  mem_wb_pipe_rd;
 logic [1:0]  mem_wb_pipe_resultsrc;
@@ -323,6 +325,7 @@ u_riscv_core_alu_decoder
   .i_alu_decoder_funct3     (if_id_pipe_instr[14:12])
   ,.i_alu_decoder_aluop     (alu_op_id)
   ,.i_alu_decoder_funct7_5  (if_id_pipe_instr[30])
+  ,.i_alu_decoder_funct7_0  (if_id_pipe_instr[25])
   ,.i_alu_decoder_opcode_5  (if_id_pipe_instr[5])
   ,.o_alu_decoder_alucontrol(alu_control_id)
 );
@@ -347,6 +350,7 @@ u_riscv_core_main_decoder
   ,.o_main_decoder_bjreg     (bjreg_id)
   ,.o_main_decoder_aluop     (alu_op_id)
   ,.o_main_decoder_imsel     (im_sel_id)
+  ,.o_main_decoder_new_mux_sel(new_mux_sel_id)
 );
 
 riscv_core_rf
@@ -687,6 +691,20 @@ u_riscv_core_pipe_imul_id_ex
   ,.o_pipe_out   (id_ex_pipe_im_sel)
 );
 
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_new_mux_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (new_mux_sel_id)
+  ,.o_pipe_out   (id_ex_pipe_new_mux_sel)
+);
+
 //----------------------------------//
 //-------------EX Stage-------------//
 //----------------------------------//
@@ -818,6 +836,19 @@ u_riscv_core_mux2x1_imm
   ,.o_mux2x1_out(auipc)
 );
 
+
+riscv_core_mux2x1
+#(
+  .XLEN (64)
+)
+u_riscv_core_mux2x1_new_mux
+(
+  .i_mux2x1_in0 (arith_result_ex)
+  ,.i_mux2x1_in1(auipc)
+  ,.i_mux2x1_sel(id_ex_pipe_new_mux_sel)
+  ,.o_mux2x1_out(new_mux_out)
+);
+
 //----------------------------------//
 //-----------EX/MEM Pipe------------//
 //----------------------------------//
@@ -832,8 +863,8 @@ u_riscv_core_pipe_alu_result_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
-  ,.i_pipe_in    (arith_result_ex)
+  ,.i_pipe_en_n  (hu_stall_mem)
+  ,.i_pipe_in    (new_mux_out)
   ,.o_pipe_out   (ex_mem_pipe_alu_result)
 );
 
@@ -846,23 +877,9 @@ u_riscv_core_pipe_wd_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (src_b_out)
   ,.o_pipe_out   (ex_mem_pipe_wd)
-);
-
-riscv_core_pipe 
-#(
-  .W_PIPE_BUS (64)
-)
-u_riscv_core_pipe_auipc_ex_mem
-(
-  .i_pipe_clk    (i_riscv_core_clk)
-  ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
-  ,.i_pipe_in    (auipc)
-  ,.o_pipe_out   (ex_mem_pipe_auipc)
 );
 
 riscv_core_pipe 
@@ -874,7 +891,7 @@ u_riscv_core_pipe_rd_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_rd)
   ,.o_pipe_out   (ex_mem_pipe_rd)
 );
@@ -888,7 +905,7 @@ u_riscv_core_pipe_pc_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_pc_plus_offset)
   ,.o_pipe_out   (ex_mem_pipe_pc_plus_offset)
 );
@@ -903,7 +920,7 @@ u_riscv_core_pipe_resultsrc_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_resultsrc)
   ,.o_pipe_out   (ex_mem_pipe_resultsrc)
 );
@@ -917,7 +934,7 @@ u_riscv_core_pipe_memwrite_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_memwrite)
   ,.o_pipe_out   (ex_mem_pipe_memwrite)
 );
@@ -931,7 +948,7 @@ u_riscv_core_pipe_size_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_size)
   ,.o_pipe_out   (ex_mem_pipe_size)
 );
@@ -945,7 +962,7 @@ u_riscv_core_pipe_ldext_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_ldext)
   ,.o_pipe_out   (ex_mem_pipe_ldext)
 );
@@ -959,7 +976,7 @@ u_riscv_core_pipe_regwrite_ex_mem
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (id_ex_pipe_regwrite)
   ,.o_pipe_out   (ex_mem_pipe_regwrite)
 );
@@ -1029,7 +1046,7 @@ u_riscv_core_pipe_alu_result_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_alu_result)
   ,.o_pipe_out   (mem_wb_pipe_alu_result)
 );
@@ -1043,24 +1060,11 @@ u_riscv_core_pipe_read_data_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (read_data_mem)
   ,.o_pipe_out   (mem_wb_pipe_read_data)
 );
 
-riscv_core_pipe 
-#(
-  .W_PIPE_BUS (64)
-)
-u_riscv_core_pipe_auipc_mem_wb
-(
-  .i_pipe_clk    (i_riscv_core_clk)
-  ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
-  ,.i_pipe_in    (ex_mem_pipe_auipc)
-  ,.o_pipe_out   (mem_wb_pipe_auipc)
-);
 
 riscv_core_pipe 
 #(
@@ -1071,7 +1075,7 @@ u_riscv_core_pipe_pc_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_pc_plus_offset)
   ,.o_pipe_out   (mem_wb_pipe_pc_plus_offset)
 );
@@ -1085,7 +1089,7 @@ u_riscv_core_pipe_rd_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_rd)
   ,.o_pipe_out   (mem_wb_pipe_rd)
 );
@@ -1100,7 +1104,7 @@ u_riscv_core_pipe_resultsrc_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_resultsrc)
   ,.o_pipe_out   (mem_wb_pipe_resultsrc)
 );
@@ -1114,7 +1118,7 @@ u_riscv_core_pipe_regwrite_mem_wb
   .i_pipe_clk    (i_riscv_core_clk)
   ,.i_pipe_rst_n (i_riscv_core_rst_n)
   ,.i_pipe_clr   (1'b0)
-  ,.i_pipe_en_n  (hu_hazard_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
   ,.i_pipe_in    (ex_mem_pipe_regwrite)
   ,.o_pipe_out   (mem_wb_pipe_regwrite)
 );
@@ -1123,18 +1127,17 @@ u_riscv_core_pipe_regwrite_mem_wb
 //----------------------------------//
 //-------------WB Stage-------------//
 //----------------------------------//
-riscv_core_mux4x1
+riscv_core_mux3x1
 #(
   .XLEN (64)
 )
-u_riscv_core_mux4x1
+u_riscv_core_mux3x1
 (
-  .i_mux4x1_in0 (mem_wb_pipe_alu_result)
-  ,.i_mux4x1_in1(mem_wb_pipe_read_data)
-  ,.i_mux4x1_in2(mem_wb_pipe_pc_plus_offset)
-  ,.i_mux4x1_in3(mem_wb_pipe_auipc)
-  ,.i_mux4x1_sel(mem_wb_pipe_resultsrc)
-  ,.o_mux4x1_out(result_wb)
+  .i_mux3x1_in0 (mem_wb_pipe_alu_result)
+  ,.i_mux3x1_in1(mem_wb_pipe_read_data)
+  ,.i_mux3x1_in2(mem_wb_pipe_pc_plus_offset)
+  ,.i_mux3x1_sel(mem_wb_pipe_resultsrc)
+  ,.o_mux3x1_out(result_wb)
 );
 
 

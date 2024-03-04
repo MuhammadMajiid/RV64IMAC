@@ -48,9 +48,9 @@ always_comb
         case (i_alu_control)
           4'b0000: o_alu_resultword = i_alu_srcA + i_alu_srcB;                  // addw/addwi
           4'b0001: o_alu_resultword = i_alu_srcA - i_alu_srcB;                  // subw
-          4'b0100: o_alu_resultword = $signed(i_alu_srcA) << i_alu_srcB[4:0];   // sllw/sllwi
-          4'b0111: o_alu_resultword = $signed(i_alu_srcA) >> i_alu_srcB[4:0];   // srlw/srlwi
-          4'b1111: o_alu_resultword = $signed(i_alu_srcA) >>> i_alu_srcB[4:0];  // sraw/srawi
+          4'b0100: o_alu_resultword = $signed(i_alu_srcA[31:0]) << i_alu_srcB[4:0];   // sllw/sllwi
+          4'b0111: o_alu_resultword = $signed(i_alu_srcA[31:0]) >> i_alu_srcB[4:0];   // srlw/srlwi
+          4'b1111: o_alu_resultword = $signed(i_alu_srcA[31:0]) >>> i_alu_srcB[4:0];  // sraw/srawi
           default: o_alu_resultword = 'hxxxx_xxxx;
         endcase
         o_alu_result = {{32{o_alu_resultword[31]}}, o_alu_resultword};

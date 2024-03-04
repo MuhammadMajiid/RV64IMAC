@@ -21,8 +21,9 @@ module riscv_core_rf (
 	output logic [63:0] o_rf_rd1, o_rf_rd2
 	);
 	logic [63:0] rf[31:0]; 	
-	always_ff @(negedge i_rf_clk)  //write
-		if (i_rf_we3) rf[i_rf_a3] <= i_rf_wd3; 
+	always_ff @(negedge i_rf_clk) begin  //write
+		if ((i_rf_we3)&&(!(i_rf_a3==0))) rf[i_rf_a3] <= i_rf_wd3; 
+	end
 	//read
 	assign o_rf_rd1 = (i_rf_a1 != 0 ) ? rf[i_rf_a1] : 0;
 	assign o_rf_rd2 = (i_rf_a2 != 0 ) ? rf[i_rf_a2] : 0;

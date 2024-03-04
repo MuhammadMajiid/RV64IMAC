@@ -12,8 +12,8 @@ module riscv_core_mul_in
   output logic [XLEN-1:0] o_mul_in_multiplier
 );
 
-logic [1:0] srcA_srcB_sign;             // sign-bit of dividend & divisor
-logic [1:0] srcA_srcB_word_sign;        // sign-bit of w_dividend & w_divisor
+logic [1:0] srcA_srcB_sign;             
+logic [1:0] srcA_srcB_word_sign;        
 
 localparam [1:0] MUL    = 2'b00;        
 localparam [1:0] MULH   = 2'b01;        
