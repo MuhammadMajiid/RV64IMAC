@@ -1,5 +1,3 @@
-// `include "lookup.sv"
-
 module riscv_core_hazard_unit
 (
 
@@ -18,14 +16,18 @@ module riscv_core_hazard_unit
     input logic [1:0] i_hazard_unit_resultsrc_ex,
     input logic i_hazard_unit_pcsrc_ex,
 
-    // C Extension input
+    // C Extension requests
     input logic i_hazard_unit_illegal_instr,
 
-    // M Extension inputs
+    // M Extension requests
     input logic i_hazard_unit_mdone,
     input logic i_hazard_unit_mbusy,
     input logic i_hazard_unit_mdivby0,
     input logic i_hazard_unit_mof,
+
+    // Caches requests
+    input logic i_hazard_unit_dcache_stall,
+    input logic i_hazard_unit_icache_stall,
 
     // Forwarding outputs
     output logic [1:0] o_hazard_unit_forwarda_ex,
@@ -49,6 +51,8 @@ module riscv_core_hazard_unit
 // Internals
 logic lwstall_detection;
 logic mstall_detection;
+logic icache_stall_detection;
+logic dcache_stall_detection;
 
 //------------------------------Forwarding------------------------------\\
 
@@ -89,12 +93,14 @@ end
 
 always_comb 
 begin : stall_proc
-    lwstall_detection = ((i_hazard_unit_resultsrc_ex == 2'b01) && ((i_hazard_unit_rs1_id == i_hazard_unit_rd_ex) || (i_hazard_unit_rs2_id == i_hazard_unit_rd_ex)));
-    mstall_detection  = (i_hazard_unit_mbusy && !i_hazard_unit_mdone);
-    o_hazard_unit_stall_if  = lwstall_detection || mstall_detection;
-    o_hazard_unit_stall_id  = lwstall_detection || mstall_detection;
-    o_hazard_unit_stall_ex  = mstall_detection;
-    o_hazard_unit_stall_mem = mstall_detection;
+    lwstall_detection       = ((i_hazard_unit_resultsrc_ex == 2'b01) && ((i_hazard_unit_rs1_id == i_hazard_unit_rd_ex) || (i_hazard_unit_rs2_id == i_hazard_unit_rd_ex)));
+    mstall_detection        = (i_hazard_unit_mbusy && !i_hazard_unit_mdone);
+    icache_stall_detection  = i_hazard_unit_icache_stall;
+    dcache_stall_detection  = i_hazard_unit_dcache_stall;
+    o_hazard_unit_stall_if  = lwstall_detection || mstall_detection || icache_stall_detection || dcache_stall_detection;
+    o_hazard_unit_stall_id  = lwstall_detection || mstall_detection || dcache_stall_detection;
+    o_hazard_unit_stall_ex  = mstall_detection  || dcache_stall_detection;
+    o_hazard_unit_stall_mem = mstall_detection  || dcache_stall_detection;
     o_hazard_unit_stall_wb  = mstall_detection;
 end
 
