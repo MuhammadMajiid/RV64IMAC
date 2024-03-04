@@ -28,10 +28,10 @@ module riscv_core_icache_controller #(
     output logic                        o_offset
 );
 //             LOCAL PARAMETERS              //
-localparam CACHE_DEPTH = $pow(2,INDEX_WIDTH) ;
+localparam CACHE_DEPTH = 2**INDEX_WIDTH ;
 //      INTERNAL REGISTERS AND MEMORIES      //
-logic [  TAG_WIDTH-1 : 0  ] TAG_MEM  [CACHE_DEPTH];
-logic                      VALID_MEM [CACHE_DEPTH];
+logic [(TAG_WIDTH-1):0] TAG_MEM  [0:CACHE_DEPTH-1];
+logic                      VALID_MEM [0:CACHE_DEPTH-1];
 enum logic [1:0] {
     IDLE           = 2'b00,
     MEM_REQ        = 2'b01,

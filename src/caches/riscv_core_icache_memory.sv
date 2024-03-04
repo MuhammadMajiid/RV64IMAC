@@ -25,11 +25,11 @@ input logic                                i_block_replace,
 input logic                                i_offset //indicate which block index to write in
 );
 //             LOCAL PARAMETERS              //
-localparam CACHE_DEPTH = $pow(2,INDEX_WIDTH) ;
-localparam BLOCK_SIZE  = $pow(2,BLOCK_OFFSET_WIDTH) ;
+localparam CACHE_DEPTH = 2**INDEX_WIDTH ;
+localparam BLOCK_SIZE  = 2**BLOCK_OFFSET_WIDTH ;
 logic [ADDR_WIDTH-1      : 0] i_addr_from_core_1 , i_addr_from_core_2 , i_addr_from_core_3; //internal adresses
 //      INTERNAL REGISTERS AND MEMORIES      //
-logic [BLOCK_SIZE-1:0][3:0][7:0] INSTR_MEM [CACHE_DEPTH];
+logic [BLOCK_SIZE-1:0][3:0][7:0] INSTR_MEM [0:CACHE_DEPTH-1];
 //          assign internal addresses   //
 assign i_addr_from_core_1 = i_addr_from_core + 1;
 assign i_addr_from_core_2 = i_addr_from_core + 2;
