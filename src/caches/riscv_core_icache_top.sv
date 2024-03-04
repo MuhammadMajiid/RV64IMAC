@@ -1,7 +1,7 @@
 `define TAG 63:12
 `define INDEX 11:5
-`define BLOCK_OFFSET 4:3
-`define BYTE_OFFSET 2:0
+`define BLOCK_OFFSET 4:2
+`define BYTE_OFFSET 1:0
 
 module riscv_core_icache_top#(
     parameter BLOCK_OFFSET_WIDTH = 2,
