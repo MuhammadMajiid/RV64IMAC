@@ -17,23 +17,26 @@ module riscv_core_top
   // Global inputs
   input logic i_riscv_core_clk,
   input logic i_riscv_core_rst_n,
-  // Data Cache - AXI Interface with DDR
-  output logic [ADDR_WIDTH-1     : 0] o_riscv_core_dcache_addr,
-  input  logic                        i_riscv_core_dcache_mem_done,
-  input  logic [AXI_DATA_WIDTH-1 : 0] i_riscv_core_dcache_block,
-  output logic                        o_riscv_core_dcache_mem_req,
-  // Instruction Cache - AXI Interface with DDR
-  output logic [ADDR_WIDTH-1     : 0] o_riscv_core_icache_addr_from_control_to_axi,
-  output logic [ADDR_WIDTH-1     : 0] o_mem_read_address,
-  output logic                        o_mem_read_req,
-  input  logic                        i_mem_read_done,
-  input  logic [AXI_DATA_WIDTH-1 : 0] i_block_from_axi,
-  input  logic [AXI_DATA_WIDTH-1 : 0] i_riscv_core_icache_block,
-  input  logic                           i_mem_write_done,
-  output logic                          o_mem_write_valid,
-  output logic [D_CORE_DATA_WIDTH-1 : 0]  o_mem_write_data,
-  output logic [     ADDR_WIDTH-1 : 0]  o_mem_write_address,
-  output logic [                7 : 0]  o_mem_write_strobe
+
+  // Instruction Cache - AXI Interface with DDR - Read Channel
+  output logic [ADDR_WIDTH-1:0]          o_riscv_core_icache_raddr_axi,   // addr to mem
+  output logic                           o_riscv_core_icache_raddr_valid, // mem req
+  output logic                           i_riscv_core_icache_rready,
+  input  logic [AXI_DATA_WIDTH-1:0]      i_riscv_core_icache_rdata, 
+
+  // Data Cache - AXI Interface with DDR - Read Channel
+  output logic [ADDR_WIDTH-1:0]          o_riscv_core_dcache_raddr_axi,
+  output logic                           o_riscv_core_dcache_raddr_valid,
+  input  logic                           i_riscv_core_dcache_rready,
+  input  logic [AXI_DATA_WIDTH-1:0]      i_riscv_core_dcache_rdata,
+
+  // Data Cache - AXI Interface with DDR - Write Channel
+  input  logic                           i_riscv_core_dcache_wresp,
+  output logic                           o_riscv_core_dcache_wvalid,
+  output logic [D_CORE_DATA_WIDTH-1:0]   o_riscv_core_dcache_wdata,
+  output logic [ADDR_WIDTH-1:0]          o_riscv_core_dcache_waddr,
+  output logic [7:0]                     o_riscv_core_dcache_wstrb
+
 );
 //-------------Local Parameters-------------//
 
@@ -146,23 +149,15 @@ logic        hu_exception;
 
 //-------------ICache Intermediate Signals-------------//
 logic                      icache_hu_stall;
-logic                      icache_mem_done;
-logic                      icache_mem_req;
-logic [ADDR_WIDTH-1:0]     icache_addr_to_axi;
-logic [AXI_DATA_WIDTH-1:0] icache_data_block;
 
 //-------------DCache Intermediate Signals-------------//
-logic [1:0]                size;
-logic                      write;
-logic                      read;
-logic                      dcache_hu_stall;
-logic                      dcache_mem_done;
-logic                      dcache_mem_req;
-logic [ADDR_WIDTH-1:0]     dcache_addr_to_axi;
-logic [ADDR_WIDTH-1:0]     dcache_addr_from_core;
-logic [D_CORE_DATA_WIDTH:0]  dcache_data_from_core;
-logic [D_CORE_DATA_WIDTH:0]  dcache_data;
-logic [AXI_DATA_WIDTH-1:0] dcache_data_block;
+logic [1:0]                   size;
+logic                         write;
+logic                         read;
+logic                         store_fault;
+logic                         load_fault;
+logic                         dcache_hu_stall;
+logic [D_CORE_DATA_WIDTH-1:0] dcache_data;
 
 //----------------------------------//
 //-------------IF Stage-------------//
@@ -234,8 +229,8 @@ riscv_core_icache_top
 #(
   .BLOCK_OFFSET_WIDTH(BLOCK_OFFSET_WIDTH)
   ,.INDEX_WIDTH      (INDEX_WIDTH)
-  ,.TAG_WIDTH      (I_TAG_WIDTH)
-  ,.CORE_DATA_WIDTH(I_CORE_DATA_WIDTH)
+  ,.TAG_WIDTH        (I_TAG_WIDTH)
+  ,.CORE_DATA_WIDTH  (I_CORE_DATA_WIDTH)
   ,.ADDR_WIDTH       (ADDR_WIDTH)
   ,.AXI_DATA_WIDTH   (AXI_DATA_WIDTH)
 )
@@ -246,10 +241,10 @@ u_riscv_core_icache
   ,.i_addr_from_core          (if_id_pipe_pcf_new)
   ,.o_stall                   (icache_hu_stall)
   ,.o_data_to_core            (instr)
-  ,.o_addr_from_control_to_axi(icache_addr_to_axi)
-  ,.o_mem_req                 (icache_mem_req)
-  ,.i_mem_done                (icache_mem_done)
-  ,.i_block_from_axi          (icache_data_block)
+  ,.o_addr_from_control_to_axi(o_riscv_core_icache_raddr_axi)
+  ,.o_mem_req                 (o_riscv_core_icache_raddr_valid)
+  ,.i_mem_done                (i_riscv_core_icache_rready)
+  ,.i_block_from_axi          (i_riscv_core_icache_rdata)
 );
 
 riscv_core_compressed_decoder
@@ -1014,18 +1009,18 @@ u_riscv_core_dcache
   ,.i_write                   (write)
   ,.i_size                    (size)
   ,.o_stall                   (dcache_hu_stall)
-  ,.o_store_fault             ()
-  ,.o_load_fault              ()
+  ,.o_store_fault             (store_fault)                                // unconnected
+  ,.o_load_fault              (load_fault)                                // unconnected
   ,.o_data_to_core            (dcache_data)
-  ,.o_mem_read_address        (o_mem_read_address)
-  ,.i_mem_read_done           (i_mem_read_done)
-  ,.o_mem_read_req            (o_mem_read_req)
-  ,.i_block_from_axi          (dcache_data_block)
-  ,.i_mem_write_done          (i_mem_write_done)
-  ,.o_mem_write_valid         (o_mem_write_valid)
-  ,.o_mem_write_data          (o_mem_write_data)
-  ,.o_mem_write_address       (o_mem_write_address)
-  ,.o_mem_write_strobe        (o_mem_write_strobe)
+  ,.o_mem_read_address        (o_riscv_core_dcache_raddr_axi)
+  ,.i_mem_read_done           (i_riscv_core_dcache_rready)
+  ,.o_mem_read_req            (o_riscv_core_dcache_raddr_valid)
+  ,.i_block_from_axi          (i_riscv_core_dcache_rdata)
+  ,.i_mem_write_done          (i_riscv_core_dcache_wresp)
+  ,.o_mem_write_valid         (o_riscv_core_dcache_wvalid)
+  ,.o_mem_write_data          (o_riscv_core_dcache_wdata)
+  ,.o_mem_write_address       (o_riscv_core_dcache_waddr)
+  ,.o_mem_write_strobe        (o_riscv_core_dcache_wstrb)
 );
 
 //----------------------------------//
