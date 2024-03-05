@@ -25,9 +25,6 @@ logic [XLEN-1:0] mul_div_result;
 logic            mul_done;
 logic            div_done;
 
-logic [5:0]      mul_fast;
-logic [6:0]      div_fast;
-
 logic            mul_start;
 logic            div_start;
 
@@ -58,8 +55,6 @@ u_riscv_core_mul_div_ctrl
   .i_mul_div_ctrl_rstn(i_mul_div_rstn),
   .i_mul_div_ctrl_mul_dn(mul_done),
   .i_mul_div_ctrl_div_dn(div_done),
-  .i_mul_div_ctrl_mul_fast(mul_fast),
-  .i_mul_div_ctrl_div_fast(div_fast),
   .o_mul_div_ctrl_out_fast(fast_result),
   .o_mul_div_ctrl_mul_start(mul_start),
   .o_mul_div_ctrl_div_start(div_start),
@@ -81,7 +76,6 @@ u_riscv_core_mul_in
   .i_mul_in_srcB(i_mul_div_srcB),
   .i_mul_in_control(i_mul_div_control[1:0]),
   .i_mul_in_isword(i_mul_div_isword),
-  .o_mul_in_fast(mul_fast),
   .o_mul_in_multiplicand(multiplicand),
   .o_mul_in_multiplier(multiplier)
 );
@@ -127,7 +121,6 @@ u_riscv_core_div_in
   .i_div_in_srcB(i_mul_div_srcB),
   .i_div_in_control(i_mul_div_control[1:0]),
   .i_div_in_isword(i_mul_div_isword),
-  .o_div_in_fast(div_fast),
   .o_div_in_dividend(dividend),
   .o_div_in_divisor(divisor)
 );

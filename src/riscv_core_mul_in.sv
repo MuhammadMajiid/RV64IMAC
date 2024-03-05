@@ -7,13 +7,12 @@ module riscv_core_mul_in
   input  logic [XLEN-1:0] i_mul_in_srcB,
   input  logic [1:0]      i_mul_in_control,
   input  logic            i_mul_in_isword,
-  output logic [5:0]      o_mul_in_fast,
   output logic [XLEN-1:0] o_mul_in_multiplicand,
   output logic [XLEN-1:0] o_mul_in_multiplier
 );
 
-logic [1:0] srcA_srcB_sign;             
-logic [1:0] srcA_srcB_word_sign;        
+logic [1:0] srcA_srcB_sign;             // sign-bit of dividend & divisor
+logic [1:0] srcA_srcB_word_sign;        // sign-bit of w_dividend & w_divisor
 
 localparam [1:0] MUL    = 2'b00;        
 localparam [1:0] MULH   = 2'b01;        
@@ -24,8 +23,6 @@ localparam [1:0] MULW   = 2'b00;
 
 assign srcA_srcB_sign = {i_mul_in_srcA[XLEN-1], i_mul_in_srcB[XLEN-1]};
 assign srcA_srcB_word_sign = {i_mul_in_srcA[XLEN/2-1], i_mul_in_srcB[XLEN/2-1]};
-
-assign o_mul_in_fast = {(i_mul_in_srcB == -1), (i_mul_in_srcB== 0), (i_mul_in_srcB == 1), (i_mul_in_srcA == -1), (i_mul_in_srcA == 0), (i_mul_in_srcA == 1)};
 
 always_comb
   begin: instr_proc

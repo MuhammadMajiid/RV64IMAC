@@ -12,8 +12,6 @@ module riscv_core_mul_div_ctrl
   input   logic            i_mul_div_ctrl_rstn,
   input   logic            i_mul_div_ctrl_mul_dn,
   input   logic            i_mul_div_ctrl_div_dn,
-  input   logic [5:0]      i_mul_div_ctrl_mul_fast,
-  input   logic [6:0]      i_mul_div_ctrl_div_fast,
   output  logic [XLEN-1:0] o_mul_div_ctrl_out_fast,
   output  logic            o_mul_div_ctrl_mul_start,
   output  logic            o_mul_div_ctrl_div_start,
@@ -29,87 +27,413 @@ typedef enum logic [1:0] {IDLE, FAST, MUL, DIV} State;
 
 State state_reg, state_next;
 
+localparam [6:0] OVERFLOW = 7'b0000001;
+localparam [6:0] DIVBYZERO = 7'b0100000;
+
+logic [6:0] fast_reg;
+logic [6:0] fastw_reg;
+logic       fast_sel;
+
 logic [XLEN-1:0] out_fast;
 logic            div_by_zero;
 logic            overflow;
+
+assign fast_reg = {(i_mul_div_ctrl_srcB == -1), (i_mul_div_ctrl_srcB == 1), (i_mul_div_ctrl_srcB == 0), (i_mul_div_ctrl_srcA == -1), (i_mul_div_ctrl_srcA == 1), (i_mul_div_ctrl_srcA == 0), (i_mul_div_ctrl_srcA == 64'h8000_0000_0000_0000)&(i_mul_div_ctrl_srcB == -1)&(i_mul_div_ctrl_control == 3'b1x0)};
+assign fastw_reg = {(i_mul_div_ctrl_srcB[XLEN/2-1:0] == -1), (i_mul_div_ctrl_srcB[XLEN/2-1:0] == 1), (i_mul_div_ctrl_srcB[XLEN/2-1:0] == 0), (i_mul_div_ctrl_srcA[XLEN/2-1:0] == -1), (i_mul_div_ctrl_srcA[XLEN/2-1:0] == 1), (i_mul_div_ctrl_srcA[XLEN/2-1:0] == 0), (i_mul_div_ctrl_srcA[XLEN/2-1:0] == 32'h8000_0000)&(i_mul_div_ctrl_srcB[XLEN/2-1:0] == -1)};
+
 
 always_comb
   begin: fast_result_proc
     out_fast = 0;
     div_by_zero = 1'b0;
     overflow = 1'b0;
-    if (i_mul_div_ctrl_control[2])
+    fast_sel = 1'b0;
+    if (!i_mul_div_ctrl_isword)
       begin
-        if (i_mul_div_ctrl_control[1]) // REM/REMU
-          begin
-            case (i_mul_div_ctrl_div_fast)
-              7'b1000001: 
-                begin
-                  if (i_mul_div_ctrl_control[0]) // REMU
-                    begin
-                      out_fast = 64'h8000_0000_0000_0000; 
-                      overflow = 1'b0;
-                    end
-                  else // REM
-                    begin
-                      out_fast = 0; 
-                      overflow = 1'b1;
-                    end
-                end
-              7'b0000010: out_fast = 1;
-              7'b0000100: out_fast = 0;
-              7'b0001000: out_fast = -1;
-              7'b0010000: out_fast = i_mul_div_ctrl_srcA;
-              7'b0100000: 
-                begin 
-                  out_fast = i_mul_div_ctrl_srcA; 
-                  div_by_zero = 1'b1;
-                end
-              7'b1000000: out_fast = ~i_mul_div_ctrl_srcA + 1;
-              default: 
-                out_fast = 0;
-            endcase
-          end
-        else // DIV/DIVU
-          begin
-            case (i_mul_div_ctrl_div_fast)
-              7'b1000001: 
+        casex (fast_reg)
+          7'b1000001: begin // overflow
+            if (i_mul_div_ctrl_control[1]) // REM
               begin
-                if (i_mul_div_ctrl_control[0]) // DIVU
-                    begin
-                      out_fast = 0; 
-                      overflow = 1'b0;
-                    end
-                else // DIV
+                out_fast = 0;
+              end
+            else // DIV
+              begin
+                out_fast = 64'h8000_0000_0000_0000;
+              end
+            fast_sel = 1;
+            overflow = 1;
+          end
+          7'b001xxx0: begin // A*0 -- A/0
+            if (i_mul_div_ctrl_control[2]) // division by 0
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
                   begin
-                    out_fast = 64'h8000_0000_0000_0000; 
-                    overflow = 1'b1;
+                    out_fast = i_mul_div_ctrl_srcA;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = 64'hFFFF_FFFF_FFFF_FFFF;
                   end
               end
-              7'b0000010: out_fast = 0;
-              7'b0000100: out_fast = 0;
-              7'b0001000: out_fast = 0;
-              7'b0010000: out_fast = i_mul_div_ctrl_srcA;
-              7'b0100000: 
+            else // multiplication by 0
               begin
-                out_fast = 64'hFFFF_FFFF_FFFF_FFFF; 
-                div_by_zero = 1'b1;
+                out_fast = 0;
               end
-              7'b1000000: out_fast = ~i_mul_div_ctrl_srcA + 1;
-              default: out_fast = 0;
-            endcase
+            fast_sel = 1;
+            div_by_zero = 1;
           end
+          7'bxx00010: begin // 0*B -- 0/B
+            out_fast = 0;
+            fast_sel = 1;
+          end
+          7'b1000000: begin // A*-1 -- A/-1
+            if (i_mul_div_ctrl_control[2]) // division by -1
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = ~i_mul_div_ctrl_srcA + 1;
+                  end
+              end
+            else // multiplication by -1
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = ~i_mul_div_ctrl_srcA + 1;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = 64'hFFFF_FFFF_FFFF_FFFF;
+                  end
+              end
+            fast_sel = 1;
+          end
+          7'b0100000: begin // A*1 -- A/1
+            if (i_mul_div_ctrl_control[2]) // division by 1
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = i_mul_div_ctrl_srcA;
+                  end
+              end
+            else // multiplication by 1
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = i_mul_div_ctrl_srcA;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = 0;
+                  end
+              end
+            fast_sel = 1;
+          end
+          7'b1001000: begin // -1*-1 -- -1/-1
+            if (i_mul_div_ctrl_control[2]) // -1/-1
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = 1;
+                  end
+              end
+            else // -1*-1
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = 1;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = 0;
+                  end
+              end
+            fast_sel = 1;
+          end
+          7'b0100100: begin // 1*1 -- 1/1
+            if (i_mul_div_ctrl_control[2]) // 1/1
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = 1;
+                  end
+              end
+            else // 1*1
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = 1;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = 0;
+                  end
+              end
+            fast_sel = 1;
+          end
+          7'b0100100: begin // 1*-1 -- 1/-1 -- -1*1 -- -1/1
+            if (i_mul_div_ctrl_control[2])
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = -1;
+                  end
+              end
+            else 
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = -1;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = -1;
+                  end
+              end
+            fast_sel = 1;
+          end
+          7'b0000100: begin // 1*B -- 1/B
+            if (i_mul_div_ctrl_control[2]) // 1/B
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 1;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = 0;
+                  end
+              end
+            else // 1*B
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = i_mul_div_ctrl_srcB;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = 0;
+                  end
+              end
+            fast_sel = 1;
+          end
+          default: begin
+            out_fast = 0;
+            fast_sel = 0;
+          end
+        endcase
       end
     else
       begin
-        case (i_mul_div_ctrl_mul_fast) // MUL/MULH/MULHSU/MULHU
-          6'b000001: out_fast = i_mul_div_ctrl_srcB;
-          6'b000010: out_fast = 0;
-          6'b000100: out_fast = ~i_mul_div_ctrl_srcB + 1;
-          6'b001000: out_fast = i_mul_div_ctrl_srcA;
-          6'b010000: out_fast = 0;
-          6'b100000: out_fast = ~i_mul_div_ctrl_srcA + 1;
-          default: out_fast = 0;
+        casex (fastw_reg)
+          7'b1000001: begin // overflow
+            if (i_mul_div_ctrl_control[1]) // REM
+              begin
+                out_fast = 0;
+              end
+            else // DIV
+              begin
+                out_fast = 64'hFFFF_FFFF_8000_0000;
+              end
+            fast_sel = 1;
+            overflow = 1;
+          end
+          7'b001xxx0: begin // A*0 -- A/0
+            if (i_mul_div_ctrl_control[2]) // division by 0
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = {{(XLEN/2){i_mul_div_ctrl_srcA[XLEN/2-1]}}, i_mul_div_ctrl_srcA[XLEN/2-1:0]};
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = 64'hFFFF_FFFF_FFFF_FFFF;
+                  end
+              end
+            else // multiplication by 0
+              begin
+                out_fast = 0;
+              end
+            fast_sel = 1;
+            div_by_zero = 1;
+          end
+          7'bxx00010: begin // 0*B -- 0/B
+            out_fast = 0;
+            fast_sel = 1;
+          end
+          7'b1000000: begin // A*-1 -- A/-1
+            if (i_mul_div_ctrl_control[2]) // division by -1
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = ~i_mul_div_ctrl_srcA + 1;
+                  end
+              end
+            else // multiplication by -1
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = ~i_mul_div_ctrl_srcA + 1;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = 64'hFFFF_FFFF_FFFF_FFFF;
+                  end
+              end
+            fast_sel = 1;
+          end
+          7'b0100000: begin // A*1 -- A/1
+            if (i_mul_div_ctrl_control[2]) // division by 1
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = {{(XLEN/2){i_mul_div_ctrl_srcA[XLEN/2-1]}}, i_mul_div_ctrl_srcA[XLEN/2-1:0]};
+                  end
+              end
+            else // multiplication by 1
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = {{(XLEN/2){i_mul_div_ctrl_srcA[XLEN/2-1]}}, i_mul_div_ctrl_srcA[XLEN/2-1:0]};
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = 0;
+                  end
+              end
+            fast_sel = 1;
+          end
+          7'b1001000: begin // -1*-1 -- -1/-1
+            if (i_mul_div_ctrl_control[2]) // -1/-1
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = 1;
+                  end
+              end
+            else // -1*-1
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = 1;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = 0;
+                  end
+              end
+            fast_sel = 1;
+          end
+          7'b0100100: begin // 1*1 -- 1/1
+            if (i_mul_div_ctrl_control[2]) // 1/1
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = 1;
+                  end
+              end
+            else // 1*1
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = 1;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = 0;
+                  end
+              end
+            fast_sel = 1;
+          end
+          7'b0100100: begin // 1*-1 -- 1/-1 -- -1*1 -- -1/1
+            if (i_mul_div_ctrl_control[2])
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = -1;
+                  end
+              end
+            else 
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = -1;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = -1;
+                  end
+              end
+            fast_sel = 1;
+          end
+          7'b0000100: begin // 1*B -- 1/B
+            if (i_mul_div_ctrl_control[2]) // 1/B
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 1;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = 0;
+                  end
+              end
+            else // 1*B
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = i_mul_div_ctrl_srcB;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = 0;
+                  end
+              end
+            fast_sel = 1;
+          end
+          default: begin
+            out_fast = 0;
+            fast_sel = 0;
+          end
         endcase
       end
   end
@@ -134,7 +458,7 @@ always_comb
       case (state_reg)
         IDLE:
           begin
-            if (i_mul_div_ctrl_en & (|{i_mul_div_ctrl_mul_fast, i_mul_div_ctrl_div_fast}))
+            if (i_mul_div_ctrl_en & fast_sel)
               begin
                 state_next = FAST;
                 o_mul_div_ctrl_busy = 1'b1;
@@ -160,7 +484,6 @@ always_comb
         FAST:
           begin
             state_next = IDLE;
-            o_mul_div_ctrl_busy = 1'b1;
           end
         MUL:
           begin
@@ -248,6 +571,6 @@ begin: output_logic_proc
 end
 
 assign o_mul_div_ctrl_mul_div_sel = i_mul_div_ctrl_control[2];
-assign o_mul_div_ctrl_out_sel = |{i_mul_div_ctrl_mul_fast, i_mul_div_ctrl_div_fast};
+assign o_mul_div_ctrl_out_sel = fast_sel;
 
 endmodule
