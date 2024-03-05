@@ -11,7 +11,7 @@ module riscv_core_top
   parameter AXI_DATA_WIDTH     = 256,
   parameter D_TAG_WIDTH        = 52,
   parameter D_CORE_DATA_WIDTH  = 64,
-  parameter FIFO_ENTRY_WIDTH   = 128
+  parameter STRB_WIDTH         = $clog2(AXI_DATA_WIDTH)
 )
 (
   // Global inputs
@@ -21,7 +21,7 @@ module riscv_core_top
   // Instruction Cache - AXI Interface with DDR - Read Channel
   output wire [ADDR_WIDTH-1:0]          o_riscv_core_icache_raddr_axi,   // addr to mem
   output wire                           o_riscv_core_icache_raddr_valid, // mem req
-  output wire                           i_riscv_core_icache_rready,
+  input  wire                           i_riscv_core_icache_rready,
   input  wire [AXI_DATA_WIDTH-1:0]      i_riscv_core_icache_rdata, 
 
   // Data Cache - AXI Interface with DDR - Read Channel
@@ -35,8 +35,7 @@ module riscv_core_top
   output wire                           o_riscv_core_dcache_wvalid,
   output wire [D_CORE_DATA_WIDTH-1:0]   o_riscv_core_dcache_wdata,
   output wire [ADDR_WIDTH-1:0]          o_riscv_core_dcache_waddr,
-  output wire [7:0]                     o_riscv_core_dcache_wstrb
-
+  output wire [STRB_WIDTH-1:0]          o_riscv_core_dcache_wstrb
 );
 //-------------Local Parameters-------------//
 
@@ -223,6 +222,35 @@ u_riscv_core_64bit_adder_pc_if
 //   .i_imem_rst_n    (i_riscv_core_rst_n)
 //   ,.i_imem_address (if_id_pipe_pcf_new)
 //   ,.o_imem_rdata   (instr)
+// );
+
+// riscv_core_axi4lite
+// #
+// (
+//   .ADDR_WIDTH     ()
+//   ,.AXI_DATA_WIDTH()
+//   ,.STRB_WIDTH    ()
+// )
+// riscv_core_axi4lite_icache
+// (
+//   .axi_clk      ()
+//   ,.axi_arstn   ()
+//   ,.saxi_araddr ()
+//   ,.saxi_arprot ()
+//   ,.saxi_arvalid()
+//   ,.saxi_arready()
+//   ,.saxi_rdata  ()
+//   ,.saxi_rresp  ()
+//   ,.saxi_rvalid ()
+//   ,.saxi_rready ()
+//   ,.maxi_araddr ()
+//   ,.maxi_arprot ()
+//   ,.maxi_arvalid()
+//   ,.maxi_arready()
+//   ,.maxi_rdata  ()
+//   ,.maxi_rresp  ()
+//   ,.maxi_rvalid ()
+//   ,.maxi_rready ()
 // );
 
 riscv_core_icache_top

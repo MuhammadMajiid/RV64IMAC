@@ -17,7 +17,7 @@ module riscv_core_top
   // Global inputs
   input logic i_riscv_core_clk,
   input logic i_riscv_core_rst_n,
-
+  
   // Instruction Cache - AXI Interface with DDR - Read Channel
   output logic [ADDR_WIDTH-1:0]          o_riscv_core_icache_raddr_axi,   // addr to mem
   output logic                           o_riscv_core_icache_raddr_valid, // mem req
@@ -36,7 +36,6 @@ module riscv_core_top
   output logic [D_CORE_DATA_WIDTH-1:0]   o_riscv_core_dcache_wdata,
   output logic [ADDR_WIDTH-1:0]          o_riscv_core_dcache_waddr,
   output logic [7:0]                     o_riscv_core_dcache_wstrb
-
 );
 //-------------Local Parameters-------------//
 
