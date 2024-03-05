@@ -137,7 +137,7 @@ always_comb
             if (i_mul_div_ctrl_en & (|{i_mul_div_ctrl_mul_fast, i_mul_div_ctrl_div_fast}))
               begin
                 state_next = FAST;
-                o_mul_div_ctrl_busy = 1'b0;
+                o_mul_div_ctrl_busy = 1'b1;
               end
             else if (i_mul_div_ctrl_en & !i_mul_div_ctrl_control[2])
               begin
@@ -160,6 +160,7 @@ always_comb
         FAST:
           begin
             state_next = IDLE;
+            o_mul_div_ctrl_busy = 1'b1;
           end
         MUL:
           begin
