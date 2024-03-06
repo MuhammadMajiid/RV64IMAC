@@ -46,14 +46,14 @@ input logic                                i_block_replace
 //             LOCAL PARAMETERS              //
 ///////////////////////////////////////////////
 
-localparam CACHE_DEPTH = $pow(2,INDEX_WIDTH) ;
-localparam BLOCK_SIZE  = $pow(2,BLOCK_OFFSET) ;
+localparam CACHE_DEPTH = 2**INDEX_WIDTH ;
+localparam BLOCK_SIZE  = 2**BLOCK_OFFSET ;
 
 ///////////////////////////////////////////////
 //      INTERNAL REGISTERS AND MEMORIES      //
 ///////////////////////////////////////////////
 
-logic [BLOCK_SIZE-1:0][7:0][7:0] DATA_MEM [CACHE_DEPTH];
+logic [BLOCK_SIZE-1:0][7:0][7:0] DATA_MEM [0: CACHE_DEPTH-1];
 
 
 ///////////////////////////////////////////////

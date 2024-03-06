@@ -66,7 +66,7 @@ module riscv_core_dcache_controller #(
 //             LOCAL PARAMETERS              //
 ///////////////////////////////////////////////
 
-localparam CACHE_DEPTH = $pow(2,INDEX_WIDTH) ;
+localparam CACHE_DEPTH = 2**INDEX_WIDTH ;
 
 
 ///////////////////////////////////////////////
@@ -74,8 +74,8 @@ localparam CACHE_DEPTH = $pow(2,INDEX_WIDTH) ;
 ///////////////////////////////////////////////
 
 
-logic [  TAG_WIDTH-1 : 0  ] TAG_MEM  [CACHE_DEPTH];
-logic                      VALID_MEM [CACHE_DEPTH];
+logic [  TAG_WIDTH-1 : 0  ] TAG_MEM  [0: CACHE_DEPTH-1];
+logic                      VALID_MEM [0: CACHE_DEPTH-1];
 
 logic                      VALID_RES , NEXT_VALID_RES;
 logic [  ADDR_WIDTH-1: 0  ] RES_SET , NEXT_RES_SET ; 
