@@ -31,9 +31,9 @@ logic [ADDR_WIDTH-1      : 0] i_addr_from_core_1 , i_addr_from_core_2 , i_addr_f
 //      INTERNAL REGISTERS AND MEMORIES      //
 logic [BLOCK_SIZE-1:0][3:0][7:0] INSTR_MEM [0:CACHE_DEPTH-1];
 //          assign internal addresses   //
-assign i_addr_from_core_1 = i_addr_from_core + 1;
-assign i_addr_from_core_2 = i_addr_from_core + 2;
-assign i_addr_from_core_3 = i_addr_from_core + 3;
+assign i_addr_from_core_1 = i_addr_from_core + 1'b1;
+assign i_addr_from_core_2 = i_addr_from_core + 2'b10;
+assign i_addr_from_core_3 = i_addr_from_core + 2'b11;
 //        WRITE AND REPLACEMENT BLOCK        //
 always @( posedge i_clk , negedge i_rst_n ) begin : FLUSH_WRITE_REPLACEMENT_BLOCK
     if (!i_rst_n) begin

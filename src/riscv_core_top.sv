@@ -42,7 +42,7 @@ module riscv_core_top
 //-------------IF Intermediate Signals-------------//
 logic [63:0] if_id_pipe_pc;
 logic [63:0] if_id_pipe_pcf_new;
-logic [63:0] compressed_offset;
+logic [2 :0] compressed_offset;
 logic [63:0] if_id_pipe_pc_plus_offset;
 logic [31:0] if_id_pipe_instr;
 logic [63:0] pcf;
@@ -190,19 +190,19 @@ u_riscv_core_mux2x1_stg2
 
 riscv_core_mux2x1
 #(
-  .XLEN (64)
+  .XLEN (3)
 )
 u_riscv_core_compressed_offset
 (
-  .i_mux2x1_in0 (64'd4)
-  ,.i_mux2x1_in1(64'd2)
+  .i_mux2x1_in0 (3'd4)
+  ,.i_mux2x1_in1(3'd2)
   ,.i_mux2x1_sel(instr_is_compressed)
   ,.o_mux2x1_out(compressed_offset)
 );
 
 riscv_core_64bit_adder
 #(
-  .XLEN (64)
+  .XLEN (64)      //this adder add 64 bit with 3 bits so some optimizations will be usefull
 )
 u_riscv_core_64bit_adder_pc_if
 (
@@ -1011,18 +1011,18 @@ riscv_core_dcache_top
   ,.AXI_DATA_WIDTH   (AXI_DATA_WIDTH)
 )
 u_riscv_core_dcache
-(
-  .i_clk                      (i_riscv_core_clk)
+(                                     //load extender is needed and the ex_mem_pipe_ldext will be the control signal
+  .i_clk                      (i_riscv_core_clk)                    
   ,.i_rst_n                   (i_riscv_core_rst_n)
-  ,.i_addr_from_core          (dcache_addr_from_core)
-  ,.i_data_from_core          (dcache_data_from_core)
-  ,.i_read                    (read)
-  ,.i_write                   (write)
-  ,.i_size                    (size)
+  ,.i_addr_from_core          (ex_mem_pipe_alu_result)
+  ,.i_data_from_core          (ex_mem_pipe_wd)
+  ,.i_read                    (read)                                      //unconnected
+  ,.i_write                   (ex_mem_pipe_memwrite)
+  ,.i_size                    (ex_mem_pipe_size)
   ,.o_stall                   (dcache_hu_stall)
   ,.o_store_fault             (store_fault)                                // unconnected
   ,.o_load_fault              (load_fault)                                // unconnected
-  ,.o_data_to_core            (dcache_data)
+  ,.o_data_to_core            (read_data_mem)
   ,.o_mem_read_address        (o_riscv_core_dcache_raddr_axi)
   ,.i_mem_read_done           (i_riscv_core_dcache_rready)
   ,.o_mem_read_req            (o_riscv_core_dcache_raddr_valid)
