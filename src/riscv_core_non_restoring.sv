@@ -27,8 +27,8 @@ always_ff @(posedge i_non_restoring_clk, negedge i_non_restoring_rstn)
     if (!i_non_restoring_rstn) 
       begin
         state_reg <= IDLE;
-        dividend_reg <= i_non_restoring_dividend;
-        divisor_reg <= i_non_restoring_divisor;
+        dividend_reg <= 0;
+        divisor_reg <= 0;
         accumulator_reg <= 0;
         cnt_reg <= 64;
       end

@@ -25,8 +25,8 @@ always_ff @(posedge i_booth_clk, negedge i_booth_rstn)
     if (!i_booth_rstn) 
       begin
         state_reg <= IDLE;
-        multiplicand_reg <= i_booth_multiplicand;
-        multiplier_reg <= i_booth_multilpier;
+        multiplicand_reg <= 0;
+        multiplier_reg <= 0;
         accumulator_reg <= 0;
         cnt_reg <= 64;
       end
