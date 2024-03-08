@@ -45,13 +45,19 @@
 `define external_interrupt     63'hb 
 `define timer_interrupt        63'h7
 
+
+//CSR operations
+`define CSRRW                  2'h1
+`define CSRRS                  2'h2
+`define CSRRC                  2'h3
+
 module riscv_core_csr_unit(
 
     input  logic                    i_riscv_core_clk,
     input  logic                    i_riscv_core_rst_n,
     input  logic  [`instr_addr-1:0] i_riscv_core_pc,                    //input PC
     input  logic                    i_riscv_core_mem_wen,               //memory write enable signal
-    input  logic  [`XLEN-1:0]        i_riscv_core_fault_addr,            //fault address from load or store operation
+    input  logic  [`XLEN-1:0]       i_riscv_core_fault_addr,            //fault address from load or store operation
     input  logic  [`instr_addr-1:0] i_riscv_core_instr,
 
     //external interrupts
@@ -60,9 +66,9 @@ module riscv_core_csr_unit(
     
     //CSR instructions signals      
     input  logic                    i_riscv_core_csr_wen,               //csr write enable signal
-    input  logic  [`csr_addr-1:0]   i_riscv_core_csr_raddr,             //csr read address
-    input  logic  [`csr_addr-1:0]   i_riscv_core_csr_waddr,             //csr write address
-    input  logic  [`XLEN-1:0]       i_riscv_core_csr_wdata,             //data to be written in the csr
+    input  logic  [2:0]             i_riscv_core_op,                    //CSR operation
+    input  logic  [`XLEN-1:0]       i_riscv_core__csr_src,
+    input  logic  [`csr_addr-1:0]   i_riscv_core_csr_addr,              //csr address
     output logic  [`XLEN-1:0]       o_riscv_core_csr_rdata,             //data read from the csr
 
     //exception handling signals
@@ -78,7 +84,8 @@ module riscv_core_csr_unit(
     input  logic                   i_riscv_core_ebreak,
 
     //exception signals
-    input  logic                   i_riscv_core_illegal_instr,          
+    input  logic                   i_riscv_core_illegal_instr_id,   
+    input  logic                    i_riscv_core_illegal_instr_exe,       
     input  logic                   i_riscv_core_instr_addr_misaligned,
     input  logic                   i_riscv_core_lw_access_fault,
     input  logic                   i_riscv_core_sw_access_fault,
@@ -108,6 +115,9 @@ logic [`XLEN-1:0] mtimecmp;
 //64-bit counter
 logic [`XLEN-1:0] counter;
 
+//intermediate value
+logic [`XLEN-1:0] op_result;                         //result of CSR operation
+
 
 
 //FSM states
@@ -133,10 +143,25 @@ logic csr_flush_if;
 assign misa = {
     2'b10,                           //MXL=2  XLEN = 64
     36'b0,                           //reserved
-    26'b00000101000001000100000100   //RV-IMC with machine, supervisor and user is implemented till now
+    26'b00000000000001000100000101   //RV-IMAC with machine is implemented till now
 };
 
 
+
+
+always_comb 
+  begin
+    case (i_riscv_core_op)
+
+      `CSRRW:      op_result = i_riscv_core__csr_src;
+      `CSRRS:      op_result = o_riscv_core_csr_rdata | i_riscv_core__csr_src;
+      `CSRRC:      op_result = o_riscv_core_csr_rdata & (~i_riscv_core__csr_src);
+
+      default:     op_result = 64'hx; 
+
+    endcase
+
+  end
 
 
 /************************output assignment******************************/
@@ -149,7 +174,7 @@ begin: output_assignment_proc
    else 
     begin
 
-     case(i_riscv_core_csr_raddr)
+     case(i_riscv_core_csr_addr)
       
 
        `csr_mvendorid:    o_riscv_core_csr_rdata <= 32'b0;
@@ -225,14 +250,14 @@ begin:trap_setup_proc
 
                 if (i_riscv_core_csr_wen)
                   begin
-                    if (i_riscv_core_csr_waddr == `csr_mcause)
-                      mcause <= i_riscv_core_csr_wdata;
+                    if (i_riscv_core_csr_addr == `csr_mcause)
+                      mcause <= op_result;
 
-                    else if (i_riscv_core_csr_waddr == `csr_mtval)
-                      mtval <= i_riscv_core_csr_wdata;
+                    else if (i_riscv_core_csr_addr == `csr_mtval)
+                      mtval <= op_result;
 
-                    else if (i_riscv_core_csr_waddr == `csr_mtinst)
-                      mtinst <= i_riscv_core_csr_wdata;
+                    else if (i_riscv_core_csr_addr == `csr_mtinst)
+                      mtinst <= op_result;
                   end
 
                 
@@ -260,7 +285,7 @@ begin:trap_setup_proc
 
                
                 //illegal instruction exception
-                else if (i_riscv_core_illegal_instr)
+                else if (i_riscv_core_illegal_instr_id || i_riscv_core_illegal_instr_exe)
                   begin
                     current_state <= setting_up;
                     mtval  <= 64'b0;
@@ -373,39 +398,39 @@ if (!i_riscv_core_rst_n)
 
         else
         begin
-            case (i_riscv_core_csr_waddr)
+            case (i_riscv_core_csr_addr)
               
               `csr_mstatus:
                  begin
-                    `mstatus_mie <= i_riscv_core_csr_wdata[3];
-                    `mstatus_mpie <= i_riscv_core_csr_wdata[7];
+                    `mstatus_mie <= op_result[3];
+                    `mstatus_mpie <= op_result[7];
                  end
 
               `csr_mie:
                  begin
-                    `mie_meie <= i_riscv_core_csr_wdata[11];
-                    `mie_mtie <= i_riscv_core_csr_wdata[7];
-                    mie[63:16] <= i_riscv_core_csr_wdata[63:16];
+                    `mie_meie <= op_result[11];
+                    `mie_mtie <= op_result[7];
+                     mie[63:16] <= op_result[63:16];
                  end
 
               `csr_mtvec:
                  begin
-                    mtvec <= i_riscv_core_csr_wdata;
+                    mtvec <= op_result;
                  end
 
               `csr_mepc:
                  begin
-                    mepc <= i_riscv_core_csr_wdata;
+                    mepc <= op_result;
                  end
 
               `csr_mscratch:
                  begin
-                    mscratch <= i_riscv_core_csr_wdata;
+                    mscratch <= op_result;
                  end
 
               `csr_mtimecmp:
                  begin
-                    mtimecmp <= i_riscv_core_csr_wdata;
+                    mtimecmp <= op_result;
                  end
 
             endcase
@@ -472,7 +497,7 @@ end
  assign o_riscv_core_mepc = mepc;
 
  //pending exception
- assign pending_exception = (i_riscv_core_illegal_instr | i_riscv_core_instr_addr_misaligned | i_riscv_core_ecall | i_riscv_core_ebreak);
+ assign pending_exception = (i_riscv_core_illegal_instr_id | i_riscv_core_illegal_instr_exe | i_riscv_core_instr_addr_misaligned | i_riscv_core_ecall | i_riscv_core_ebreak);
 
 
 //interrupt handler address
@@ -489,7 +514,7 @@ assign o_riscv_core_mux1 = ((current_state == setting_up) | i_riscv_core_mret_id
 
 //flush signals
 assign csr_flush_mem = i_riscv_core_lw_access_fault | i_riscv_core_sw_access_fault | (`mstatus_mie & i_riscv_core_mem_wen);
-assign csr_flush_exe = csr_flush_mem | i_riscv_core_instr_addr_misaligned | (`mstatus_mie);
+assign csr_flush_exe = csr_flush_mem | i_riscv_core_illegal_instr_exe | i_riscv_core_instr_addr_misaligned | (`mstatus_mie);
 assign csr_flush_id = csr_flush_exe | pending_exception | (`mstatus_mie);
 assign csr_flush_if =  (current_state == setting_up) | (i_riscv_core_mret_id) | pending_exception | (`mstatus_mie);
 
