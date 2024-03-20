@@ -21,18 +21,26 @@ module riscv_core_branch_unit
   input  logic [XLEN-1:0] i_branch_unit_srcA,
   input  logic [XLEN-1:0] i_branch_unit_srcB,
   input  logic [2:0]      i_branch_unit_funct3,
-  output logic            o_branch_unit_istaken
+  input  logic [1:0]      i_branch_unit_targetPC,
+  output logic            o_branch_unit_istaken,
+  output logic            o_branch_unit_addr_mismatch
 );
+
+logic istaken;
+
 always_comb
   begin: istaken_proc
     case (i_branch_unit_funct3)
-      3'b000:  o_branch_unit_istaken = $signed(i_branch_unit_srcA)   == $signed(i_branch_unit_srcB);   // beq
-      3'b001:  o_branch_unit_istaken = $signed(i_branch_unit_srcA)   != $signed(i_branch_unit_srcB);   // bne
-      3'b100:  o_branch_unit_istaken = $signed(i_branch_unit_srcA)    < $signed(i_branch_unit_srcB);   // blt
-      3'b101:  o_branch_unit_istaken = $signed(i_branch_unit_srcA)   >= $signed(i_branch_unit_srcB);   // bge
-      3'b110:  o_branch_unit_istaken = $unsigned(i_branch_unit_srcA)  < $unsigned(i_branch_unit_srcB); // bltu
-      3'b111:  o_branch_unit_istaken = $unsigned(i_branch_unit_srcA) >= $unsigned(i_branch_unit_srcB); // bgeu
-      default: o_branch_unit_istaken = 1'b0;
+      3'b000:  istaken = $signed(i_branch_unit_srcA)   == $signed(i_branch_unit_srcB);   // beq
+      3'b001:  istaken = $signed(i_branch_unit_srcA)   != $signed(i_branch_unit_srcB);   // bne
+      3'b100:  istaken = $signed(i_branch_unit_srcA)    < $signed(i_branch_unit_srcB);   // blt
+      3'b101:  istaken = $signed(i_branch_unit_srcA)   >= $signed(i_branch_unit_srcB);   // bge
+      3'b110:  istaken = $unsigned(i_branch_unit_srcA)  < $unsigned(i_branch_unit_srcB); // bltu
+      3'b111:  istaken = $unsigned(i_branch_unit_srcA) >= $unsigned(i_branch_unit_srcB); // bgeu
+      default: istaken = 1'b0;
     endcase
   end
+
+assign o_branch_unit_addr_mismatch = istaken & ~i_branch_unit_targetPC[0] & ~i_branch_unit_targetPC[1];
+assign o_branch_unit_istaken = istaken;
 endmodule
