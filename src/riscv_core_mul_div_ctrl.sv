@@ -92,10 +92,12 @@ always_comb
                 if (i_mul_div_ctrl_control[1]) // REM/REMU
                   begin
                     out_fast = 0;
+                    fast_sel = 1;
                   end
                 else // DIV/DIVU
                   begin
                     out_fast = ~i_mul_div_ctrl_srcA + 1;
+                    fast_sel = 0;
                   end
               end
             else // multiplication by -1
@@ -103,13 +105,14 @@ always_comb
                 if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
                   begin
                     out_fast = ~i_mul_div_ctrl_srcA + 1;
+                    fast_sel = 1;
                   end
                 else // MULH/MULHSU/MULHU
                   begin
                     out_fast = 64'hFFFF_FFFF_FFFF_FFFF;
+                    fast_sel = 0;
                   end
-              end
-            fast_sel = 1;
+              end  
           end
           7'b0100000: begin // A*1 -- A/1
             if (i_mul_div_ctrl_control[2]) // division by 1
@@ -142,10 +145,12 @@ always_comb
                 if (i_mul_div_ctrl_control[1]) // REM/REMU
                   begin
                     out_fast = 0;
+                    fast_sel = 1;
                   end
                 else // DIV/DIVU
                   begin
                     out_fast = 1;
+                    fast_sel = 1;
                   end
               end
             else // -1*-1
@@ -153,13 +158,19 @@ always_comb
                 if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
                   begin
                     out_fast = 1;
+                    fast_sel = 1;
                   end
-                else // MULH/MULHSU/MULHU
+                else if (i_mul_div_ctrl_control[1:0] == 2'b01)// MULH
                   begin
                     out_fast = 0;
+                    fast_sel = 1;
+                  end
+                else // MULHSU/MULHU
+                  begin
+                    out_fast = 0;
+                    fast_sel = 0;
                   end
               end
-            fast_sel = 1;
           end
           7'b0100100: begin // 1*1 -- 1/1
             if (i_mul_div_ctrl_control[2]) // 1/1
@@ -186,16 +197,18 @@ always_comb
               end
             fast_sel = 1;
           end
-          7'b0100100: begin // 1*-1 -- 1/-1 -- -1*1 -- -1/1
+          7'b1000100: begin // 1*-1 -- 1/-1
             if (i_mul_div_ctrl_control[2])
               begin
                 if (i_mul_div_ctrl_control[1]) // REM/REMU
                   begin
                     out_fast = 0;
+                    fast_sel = 1;
                   end
                 else // DIV/DIVU
                   begin
                     out_fast = -1;
+                    fast_sel = 0;
                   end
               end
             else 
@@ -203,13 +216,52 @@ always_comb
                 if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
                   begin
                     out_fast = -1;
+                    fast_sel = 1;
                   end
-                else // MULH/MULHSU/MULHU
+                else if (i_mul_div_ctrl_control[1:0] == 2'b01) // MULH
                   begin
                     out_fast = -1;
+                    fast_sel = 1;
+                  end
+                else // MULHSU/MULHU
+                  begin
+                    out_fast = 0;
+                    fast_sel = 1;
                   end
               end
-            fast_sel = 1;
+          end
+          7'b0101000: begin // -1*1 -- -1/1
+            if (i_mul_div_ctrl_control[2])
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                    fast_sel = 1;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = -1;
+                    fast_sel = 0;
+                  end
+              end
+            else 
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = -1;
+                    fast_sel = 1;
+                  end
+                else if (i_mul_div_ctrl_control[1:0] == 2'b11) // MULHU
+                  begin
+                    out_fast = 0;
+                    fast_sel = 1;
+                  end
+                else // MULH/MULHSU
+                  begin
+                    out_fast = -1;
+                    fast_sel = 1;
+                  end
+              end
           end
           7'b0000100: begin // 1*B -- 1/B
             if (i_mul_div_ctrl_control[2]) // 1/B
@@ -286,10 +338,12 @@ always_comb
                 if (i_mul_div_ctrl_control[1]) // REM/REMU
                   begin
                     out_fast = 0;
+                    fast_sel = 1;
                   end
                 else // DIV/DIVU
                   begin
                     out_fast = ~i_mul_div_ctrl_srcA + 1;
+                    fast_sel = 0;
                   end
               end
             else // multiplication by -1
@@ -297,13 +351,14 @@ always_comb
                 if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
                   begin
                     out_fast = ~i_mul_div_ctrl_srcA + 1;
+                    fast_sel = 1;
                   end
                 else // MULH/MULHSU/MULHU
                   begin
                     out_fast = 64'hFFFF_FFFF_FFFF_FFFF;
+                    fast_sel = 0;
                   end
               end
-            fast_sel = 1;
           end
           7'b0100000: begin // A*1 -- A/1
             if (i_mul_div_ctrl_control[2]) // division by 1
@@ -336,10 +391,12 @@ always_comb
                 if (i_mul_div_ctrl_control[1]) // REM/REMU
                   begin
                     out_fast = 0;
+                    fast_sel = 1;
                   end
                 else // DIV/DIVU
                   begin
                     out_fast = 1;
+                    fast_sel = 1;
                   end
               end
             else // -1*-1
@@ -347,13 +404,14 @@ always_comb
                 if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
                   begin
                     out_fast = 1;
+                    fast_sel = 1;
                   end
                 else // MULH/MULHSU/MULHU
                   begin
                     out_fast = 0;
+                    fast_sel = 0;
                   end
               end
-            fast_sel = 1;
           end
           7'b0100100: begin // 1*1 -- 1/1
             if (i_mul_div_ctrl_control[2]) // 1/1
@@ -380,16 +438,18 @@ always_comb
               end
             fast_sel = 1;
           end
-          7'b0100100: begin // 1*-1 -- 1/-1 -- -1*1 -- -1/1
+          7'b1000100: begin // 1*-1 -- 1/-1 
             if (i_mul_div_ctrl_control[2])
               begin
                 if (i_mul_div_ctrl_control[1]) // REM/REMU
                   begin
                     out_fast = 0;
+                    fast_sel = 1;
                   end
                 else // DIV/DIVU
                   begin
                     out_fast = -1;
+                    fast_sel = 0;
                   end
               end
             else 
@@ -397,13 +457,42 @@ always_comb
                 if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
                   begin
                     out_fast = -1;
+                    fast_sel = 1;
                   end
                 else // MULH/MULHSU/MULHU
                   begin
                     out_fast = -1;
+                    fast_sel = 0;
                   end
               end
-            fast_sel = 1;
+          end
+          7'b0101000: begin // -1*1 -- -1/1
+            if (i_mul_div_ctrl_control[2])
+              begin
+                if (i_mul_div_ctrl_control[1]) // REM/REMU
+                  begin
+                    out_fast = 0;
+                    fast_sel = 1;
+                  end
+                else // DIV/DIVU
+                  begin
+                    out_fast = -1;
+                    fast_sel = 0;
+                  end
+              end
+            else 
+              begin
+                if (i_mul_div_ctrl_control[1:0] == 2'b00) // MUL
+                  begin
+                    out_fast = -1;
+                    fast_sel = 1;
+                  end
+                else // MULH/MULHSU/MULHU
+                  begin
+                    out_fast = -1;
+                    fast_sel = 0;
+                  end
+              end
           end
           7'b0000100: begin // 1*B -- 1/B
             if (i_mul_div_ctrl_control[2]) // 1/B
