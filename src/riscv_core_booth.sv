@@ -18,6 +18,7 @@ State state_reg, state_next;
 logic [XLEN-1:0]        multiplicand_reg, multiplicand_next;        // Q reg
 logic [XLEN-1:0]        multiplier_reg, multiplier_next;          // M reg
 logic [XLEN-1:0]        accumulator_reg, accumulator_next;  // A reg
+logic                   carry_reg, carry_next;
 logic [$clog2(XLEN):0]  cnt_reg, cnt_next;                  // n counter
     
 always_ff @(posedge i_booth_clk, negedge i_booth_rstn)
@@ -28,6 +29,7 @@ always_ff @(posedge i_booth_clk, negedge i_booth_rstn)
         multiplicand_reg <= 0;
         multiplier_reg <= 0;
         accumulator_reg <= 0;
+        carry_reg <= 0;
         cnt_reg <= 64;
       end
     else
@@ -36,6 +38,7 @@ always_ff @(posedge i_booth_clk, negedge i_booth_rstn)
         multiplicand_reg <= multiplicand_next;
         multiplier_reg <= multiplier_next;
         accumulator_reg <= accumulator_next;
+        carry_reg <= carry_next;
         cnt_reg <= cnt_next;
       end
   end
@@ -45,6 +48,7 @@ always_comb
     multiplicand_next = multiplicand_reg;
     multiplier_next = multiplier_reg;
     accumulator_next = accumulator_reg;
+    carry_next = carry_reg;
     state_next = state_reg;
     cnt_next = cnt_reg;
     o_booth_done = 1'b0;
@@ -57,6 +61,7 @@ always_comb
               multiplicand_next = i_booth_multiplicand;
               multiplier_next = i_booth_multilpier;
               accumulator_next = 0;
+              carry_next = 0;
               cnt_next = 64;
               state_next = MUL;
             end
@@ -69,12 +74,12 @@ always_comb
         begin
           if (multiplier_reg[0])
             begin
-              accumulator_next = accumulator_reg + multiplicand_reg;
-              {accumulator_next, multiplier_next} = {accumulator_next, multiplier_reg} >> 1;
+              {carry_next, accumulator_next} = accumulator_reg + i_booth_multiplicand;
+              {carry_next, accumulator_next, multiplier_next} = {carry_next, accumulator_next, multiplier_reg} >>> 1;
             end
           else
             begin
-              {accumulator_next, multiplier_next} = {accumulator_reg, multiplier_reg} >> 1;
+              {carry_next, accumulator_next, multiplier_next} = {carry_next, accumulator_reg, multiplier_reg} >>> 1;
             end
           cnt_next = cnt_reg - 1;
           if (cnt_next == 0) 
