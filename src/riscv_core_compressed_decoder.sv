@@ -175,7 +175,7 @@ always_comb begin
                     i_compressed_decoder_instr[12],
                     i_compressed_decoder_instr[6:2],
                     i_compressed_decoder_instr[11:7],
-                    7'b0110011
+                    7'b0110111
                 };
             end
            end
