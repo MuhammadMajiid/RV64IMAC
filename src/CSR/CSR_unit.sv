@@ -66,7 +66,7 @@ module riscv_core_csr_unit(
     
     //CSR instructions signals      
     input  logic                    i_csr_unit_csr_wen,               //csr write enable signal
-    input  logic  [2:0]             i_csr_unit_op,                    //CSR operation
+    input  logic  [1:0]             i_csr_unit_op,                    //CSR operation
     input  logic  [`XLEN-1:0]       i_csr_unit_src,
     input  logic  [`csr_addr-1:0]   i_csr_unit_csr_addr,              //csr address
     output logic  [`XLEN-1:0]       o_csr_unit_csr_rdata,             //data read from the csr
