@@ -22,7 +22,8 @@ module riscv_core_main_decoder (
     output logic       o_main_decoder_lr,
     output logic       o_main_decoder_sc,
     output logic       o_main_decoder_src_sel,
-    output logic [1:0] o_main_decoder_op
+    output logic [1:0] o_main_decoder_op,
+    output logic       o_main_decoder_illegal
 
 );
 
@@ -248,6 +249,42 @@ case (i_main_decoder_opcode)
 
     default: o_main_decoder_op = 2'b00; 
 endcase
+
+end
+
+//////////////////////////////////
+/// ILLEGAL INSTRUCTION LOGIC ////
+//////////////////////////////////
+
+always_comb begin : ILLEGAL_INSTRUCTION_LOGIC
+
+o_main_decoder_illegal = 1;
+
+case (i_main_decoder_opcode)
+
+
+   7'b0110011:   o_main_decoder_illegal = 0;
+   7'b0111011:   o_main_decoder_illegal = 0;
+   7'b0010011:   o_main_decoder_illegal = 0; // I-Type except word instructions
+
+   7'b0011011:   o_main_decoder_illegal = 0; // I-Type for word instructions
+ 
+   7'b0000011:   o_main_decoder_illegal = 0;
+   7'b0100011:   o_main_decoder_illegal = 0;
+   7'b1100011:   o_main_decoder_illegal = 0; // B-Type
+   7'b1101111:   o_main_decoder_illegal = 0; // jal
+   7'b1100111:   o_main_decoder_illegal = 0;// jalr
+   7'b0110111:   o_main_decoder_illegal = 0; // lui
+   7'b0010111:   o_main_decoder_illegal = 0; // auipc
+   7'b0110011:   o_main_decoder_illegal = 0; // M extension_1
+   7'b0111011:   o_main_decoder_illegal = 0; // M extension_2
+   7'b0101111:   o_main_decoder_illegal = 0; // A extension
+   7'b1110011:   o_main_decoder_illegal = 0; // CSR_instruction
+
+    default   :  o_main_decoder_illegal = 1; // Default Case     
+endcase
+
+
 
 end
 
