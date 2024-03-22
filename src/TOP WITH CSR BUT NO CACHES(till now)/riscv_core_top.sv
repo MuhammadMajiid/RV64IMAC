@@ -20,7 +20,8 @@ logic [63:0] mux_to_stg2;
 logic [31:0] instr;
 logic [31:0] c_ext_instr_out;
 logic        instr_is_compressed;
-logic        instr_is_illegal;
+logic        instr_is_illegal_comp;
+logic        instr_is_illegal_comp_id;
 
 //-------------ID Intermediate Signals-------------//
 logic [63:0] id_ex_pipe_imm;
@@ -123,42 +124,50 @@ logic [63:0] mepc_if;
 logic [63:0] trap_addr_if;
 logic [63:0] PCF_NEW;
 logic [63:0] TRAP_PC;
+
 //---DECODE STAGE---//
 logic csr_src_sel_id;
-logic [1:0] csr_op_id;
+logic [1:0]  csr_op_id;
 logic [63:0] csr_src_id;
-logic ecall_id;
-logic ebreak_id;
-logic mret_id;
+logic        ecall_id;
+logic        ebreak_id;
+logic        mret_id;
+logic        illegal_input_to_csr;
+logic        csr_wen_id;
+
 //---EXECUTION STAGE---//
 logic [31:0] instr_ex;
-logic [1:0] csr_op_ex;
+logic [1:0]  csr_op_ex;
 logic [63:0] csr_src_ex;
-logic mret_ex;
-logic instr_addr_miss_ex;
+logic        mret_ex;
+logic        instr_addr_miss_ex;
+logic        csr_wen_ex;
+
 //---MEMORY STAGE---//
-logic [1:0] csr_op_mem;
+logic [1:0]  csr_op_mem;
 logic [31:0] instr_mem;
-logic mret_mem;
+logic        mret_mem;
 logic [63:0] csr_src_mem;
 logic [63:0] pc_mem;
+logic        csr_wen_mem;
+
 //---WRITE BACK STAGE---//
-logic [1:0] csr_op_wb;
+logic [1:0]  csr_op_wb;
 logic [31:0] instr_wb;
-logic mret_wb;
+logic        mret_wb;
 logic [63:0] csr_src_wb;
-logic trap_cntrl_wb;
-logic pc_cntrl_wb;
+logic        trap_cntrl_wb;
+logic        pc_cntrl_wb;
 logic [63:0] csr_rdata_wb;
-logic csr_mem_flush;
-logic csr_ex_flush;
-logic csr_id_flush;
-logic csr_if_flush;
+logic        csr_mem_flush;
+logic        csr_ex_flush;
+logic        csr_id_flush;
+logic        csr_if_flush;
 logic [63:0] csr_pc_trap_stg1;
 logic [63:0] csr_pc;
 logic [63:0] csr_instr_stg1;
 logic [63:0] csr_instr;
-
+logic        csr_wen_wb;
 
 //----------------------------------//
 //-------------IF Stage-------------//
@@ -269,12 +278,27 @@ u_riscv_core_compressed_decoder
   .i_compressed_decoder_instr         (instr)
   ,.o_compressed_decoder_instr        (c_ext_instr_out)
   ,.o_compressed_decoder_is_compressed(instr_is_compressed)
-  ,.o_compressed_decoder_illegal_instr(instr_is_illegal)    // flag for illegal instr handling
+  ,.o_compressed_decoder_illegal_instr(instr_is_illegal_comp)    // flag for illegal instr handling
 );
 
 //----------------------------------//
 //------------IF/ID Pipe------------//
 //----------------------------------//
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_instr_illigal_compressed_if_id
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_id)
+  ,.i_pipe_en_n  (hu_stall_id)
+  ,.i_pipe_in    (instr_is_illegal_comp)
+  ,.o_pipe_out   (instr_is_illegal_comp_id)
+);
+
 
 riscv_core_pipe 
 #(
@@ -332,7 +356,7 @@ u_riscv_core_alu_decoder
   ,.i_alu_decoder_opcode_5  (if_id_pipe_instr[5])
   ,.o_alu_decoder_alucontrol(alu_control_id)
 );
-
+/*
 riscv_core_main_decoder
 u_riscv_core_main_decoder
 (
@@ -357,8 +381,43 @@ u_riscv_core_main_decoder
   ,.o_main_decoder_src_sel(csr_src_sel_id)
   ,.o_main_decoder_op(csr_op_id)
 );
+*/
+riscv_core_main_decoder_top
+u_riscv_core_main_decoder
+(
+  .i_instr(if_id_pipe_instr)
+  ,.i_main_decoder_if_illegal(instr_is_illegal_comp_id)
+    // CSR OUTPUTS //
+  ,.o_csr_control_ecall(ecall_id)
+  ,.o_csr_control_ebreak(ebreak_id)
+  ,.o_csr_control_mret(mret_id)
+  ,.o_csr_control_csr_wen(csr_wen_id)
+    // Main Decoder Outputs //
+  ,.o_main_decoder_imsrc(immsrc_id)
+  ,.o_main_decoder_UCtrl(uctrl_id)
+  ,.o_main_decoder_resultsrc(resultsrc_id)
+  ,.o_main_decoder_regwrite(regwrite_id)
+  ,.o_main_decoder_alusrcB(alusrc_id)
+  ,.o_main_decoder_memwrite(memwrite_id)
+  ,.o_main_decoder_branch(branch_id)
+  ,.o_main_decoder_jump(jump_id)
+  ,.o_main_decoder_bjreg(bjreg_id)
+  ,.o_main_decoder_size(size_id)
+  ,.o_main_decoder_LdExt(ldext_id)
+  ,.o_main_decoder_isword(isword_id)
+  ,.o_main_decoder_aluop(alu_op_id)
+  ,.o_main_decoder_imsel(im_sel_id)
+  ,.o_main_decoder_new_mux_sel(new_mux_sel_id)
+  ,.o_main_decoder_amo()//////////////////////for atomic
+  ,.o_main_decoder_amo_op()//////////////////for atomic
+  ,.o_main_decoder_lr()//////////////////////for atomic
+  ,.o_main_decoder_sc()//////////////////////for atomic
+  ,.o_main_decoder_src_sel(csr_src_sel_id)
+  ,.o_main_decoder_op(csr_op_id)
+  ,.o_main_decoder_illegal(illegal_input_to_csr)
+);
 
-
+/*
 riscv_core_csr_control_signals
 u_riscv_core_csr_conrtol_signals
 (
@@ -367,7 +426,7 @@ u_riscv_core_csr_conrtol_signals
 ,.o_csr_control_ebreak(ebreak_id)
 ,.o_csr_control_mret(mret_id)
 );
-
+*/
 
 
 riscv_core_rf
@@ -792,6 +851,20 @@ u_riscv_core_pipe_new_mux_id_ex
   ,.o_pipe_out   (id_ex_pipe_new_mux_sel)
 );
 
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_csr_wen_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (csr_wen_id)
+  ,.o_pipe_out   (csr_wen_ex)
+);
+
 //----------------------------------//
 //-------------EX Stage-------------//
 //----------------------------------//
@@ -1144,6 +1217,20 @@ u_riscv_core_pipe_regwrite_ex_mem
   ,.o_pipe_out   (ex_mem_pipe_regwrite)
 );
 
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_csr_wen_ex_mem
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (csr_wen_ex)
+  ,.o_pipe_out   (csr_wen_mem)
+);
+
 //----------------------------------//
 //-------------MEM Stage------------//
 //----------------------------------//
@@ -1312,6 +1399,19 @@ u_riscv_core_pipe_mret_mem_wb
   ,.o_pipe_out   (mret_wb)
 );
 
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_csr_wen_mem_wb
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (csr_wen_mem)
+  ,.o_pipe_out   (csr_wen_wb)
+);
 
 
 //----------------------------------//
@@ -1344,7 +1444,7 @@ riscv_core_csr_unit
   ,.i_csr_unit_mexternal(i_riscv_core_external_interrupt)
   ,.o_csr_unit_ack(o_riscv_core_ack)
     //CSR instructions signals      
-  ,.i_csr_unit_csr_wen()/////////////after main decoder editing
+  ,.i_csr_unit_csr_wen(csr_wen_wb)
   ,.i_csr_unit_op(csr_op_wb)
   ,.i_csr_unit_src(csr_src_wb)
   ,.i_csr_unit_csr_addr(instr_wb[31:20])
@@ -1360,16 +1460,16 @@ riscv_core_csr_unit
   ,.i_csr_unit_ecall(ecall_id)
   ,.i_csr_unit_ebreak(ebreak_id)
     //exception signals
-  ,.i_csr_unit_illegal_instr_id()/////after main decder editing
+  ,.i_csr_unit_illegal_instr_id(illegal_input_to_csr)
   ,.i_csr_unit_illegal_instr_exe(m_ext_divby0)//still there's some editing here
   ,.i_csr_unit_instr_addr_misaligned(instr_addr_miss_ex)
   ,.i_csr_unit_lw_access_fault()//from cache
   ,.i_csr_unit_sw_access_fault()//from cache
     //flush signals
-  ,.o_csr_unit_if_flush(csr_if_flush)//for hazard don't forget
-  ,.o_csr_unit_id_flush(csr_id_flush)
-  ,.o_csr_unit_exe_flush(csr_ex_flush)
-  ,.o_csr_unit_mem_flush(csr_mem_flush)
+  ,.o_csr_unit_if_flush(csr_if_flush)///////for hazard don't forget
+  ,.o_csr_unit_id_flush(csr_id_flush)///////for hazard don't forget
+  ,.o_csr_unit_exe_flush(csr_ex_flush)///////for hazard don't forget
+  ,.o_csr_unit_mem_flush(csr_mem_flush)///////for hazard don't forget
 );
 
 riscv_core_mux2x1
@@ -1442,7 +1542,7 @@ u_riscv_core_hazard_unit
     ,.i_hazard_unit_resultsrc_ex  (id_ex_pipe_resultsrc)
     ,.i_hazard_unit_pcsrc_ex      (pcsrc_ex)
     // C Extension
-    ,.i_hazard_unit_illegal_instr (instr_is_illegal)
+    ,.i_hazard_unit_illegal_instr (instr_is_illegal_comp)
     // M Extension
     ,.i_hazard_unit_mdone         (m_ext_done)
     ,.i_hazard_unit_mbusy         (m_ext_busy)
