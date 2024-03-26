@@ -79,6 +79,7 @@ logic                      VALID_MEM [0: CACHE_DEPTH-1];
 
 logic                      VALID_RES , NEXT_VALID_RES;
 logic [  ADDR_WIDTH-1: 0  ] RES_SET , NEXT_RES_SET ; 
+logic [            1 : 0  ] RES_SET_SIZE , NEXT_RES_SET_SIZE ;
 
 logic                       res_set_hit;
 
@@ -108,6 +109,7 @@ always_ff @( posedge i_clk , negedge i_rst_n ) begin : NEXT_STATE_ASSIGN_FLUSH_U
         end
         VALID_RES <= 0;
         RES_SET <= 0;
+        RES_SET_SIZE <= 0;
         STATE <= IDLE;
     end
 
@@ -116,6 +118,7 @@ always_ff @( posedge i_clk , negedge i_rst_n ) begin : NEXT_STATE_ASSIGN_FLUSH_U
         STATE <= NEXT ;
         VALID_RES <= NEXT_VALID_RES;
         RES_SET <= NEXT_RES_SET;
+        RES_SET_SIZE <= NEXT_RES_SET_SIZE;
 
         // UPDATE TAG and VALID MEM in case of BLOCK REPLACEMENT //
 
@@ -161,6 +164,7 @@ o_mem_write_valid = 0;
 NEXT = STATE ;
 NEXT_RES_SET = RES_SET;
 NEXT_VALID_RES = VALID_RES;
+NEXT_RES_SET_SIZE = RES_SET_SIZE;
 
 
 case (STATE)
@@ -209,6 +213,7 @@ case (STATE)
                        o_rd_en = 1;
                        NEXT_RES_SET = i_addr_from_core;
                        NEXT_VALID_RES =1;  
+                       NEXT_RES_SET_SIZE = i_size;
                     end
                    
                     else
@@ -489,7 +494,7 @@ end
 always_comb begin : RES_SET_COMP
 res_set_hit =0;
 if (i_sc) begin
-    res_set_hit = ( (VALID_RES) && (RES_SET == i_addr_from_core));
+    res_set_hit = ( (VALID_RES) && (RES_SET == i_addr_from_core) && (RES_SET_SIZE == i_size));
 end    
 end
 
