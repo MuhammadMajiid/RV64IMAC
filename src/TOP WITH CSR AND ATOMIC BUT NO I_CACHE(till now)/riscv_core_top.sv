@@ -66,6 +66,11 @@ logic        im_sel_id;
 logic        id_ex_pipe_im_sel;
 logic        new_mux_sel_id;
 logic        id_ex_pipe_new_mux_sel;
+logic [3:0]  id_main_decoder_amo_op;
+logic        id_main_decoder_amo;
+logic        id_main_decoder_lr;
+logic        id_main_decoder_sc;
+
 
 //-------------EX Intermediate Signals-------------//
 logic [63:0] ex_mem_pipe_alu_result;
@@ -91,6 +96,10 @@ logic        m_ext_done;
 logic        m_ext_busy;
 logic        m_ext_divby0;
 logic        m_ext_of;
+logic [3:0]  ex_main_decoder_amo_op;
+logic        ex_main_decoder_amo;
+logic        ex_main_decoder_lr;
+logic        ex_main_decoder_sc;
 
 logic [63:0] new_mux_out;
 
@@ -102,6 +111,14 @@ logic [63:0] mem_wb_pipe_pc_plus_offset;
 logic [4:0]  mem_wb_pipe_rd;
 logic [1:0]  mem_wb_pipe_resultsrc;
 logic        mem_wb_pipe_regwrite; 
+logic [3:0]  mem_main_decoder_amo_op;
+logic        mem_main_decoder_amo;
+logic        mem_main_decoder_lr;
+logic        mem_main_decoder_sc;
+logic        load_fault;
+logic        store_fault;
+logic        amo_fault;
+logic        d_chache_stall;
 
 //-------------WB Intermediate Signals-------------//
 logic [63:0] result_wb;
@@ -117,7 +134,6 @@ logic        hu_stall_wb;
 logic        hu_flush_id;
 logic        hu_flush_ex;
 logic        hu_exception;
-
 //----------------CSR Signals------------------------//
 //---FETCH STAGE---//
 logic [63:0] mepc_if;
@@ -168,6 +184,7 @@ logic [63:0] csr_pc;
 logic [63:0] csr_instr_stg1;
 logic [63:0] csr_instr;
 logic        csr_wen_wb;
+logic        csr_store_fault;
 
 //----------------------------------//
 //-------------IF Stage-------------//
@@ -408,10 +425,10 @@ u_riscv_core_main_decoder
   ,.o_main_decoder_aluop(alu_op_id)
   ,.o_main_decoder_imsel(im_sel_id)
   ,.o_main_decoder_new_mux_sel(new_mux_sel_id)
-  ,.o_main_decoder_amo()//////////////////////for atomic
-  ,.o_main_decoder_amo_op()//////////////////for atomic
-  ,.o_main_decoder_lr()//////////////////////for atomic
-  ,.o_main_decoder_sc()//////////////////////for atomic
+  ,.o_main_decoder_amo(id_main_decoder_amo)//////////////////////for atomic  connected
+  ,.o_main_decoder_amo_op(id_main_decoder_amo_op)//////////////////for atomic  connected
+  ,.o_main_decoder_lr(id_main_decoder_lr)//////////////////////for atomic  connected
+  ,.o_main_decoder_sc(id_main_decoder_sc)//////////////////////for atomic  connected
   ,.o_main_decoder_src_sel(csr_src_sel_id)
   ,.o_main_decoder_op(csr_op_id)
   ,.o_main_decoder_illegal(illegal_input_to_csr)
@@ -638,6 +655,66 @@ u_riscv_core_pipe_resultsrc_id_ex
   ,.i_pipe_in    (resultsrc_id)
   ,.o_pipe_out   (id_ex_pipe_resultsrc)
 );
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (4)
+)
+u_riscv_core_pipe_amo_op_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (id_main_decoder_amo_op)
+  ,.o_pipe_out   (ex_main_decoder_amo_op)
+);
+
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_amo_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (id_main_decoder_amo)
+  ,.o_pipe_out   (ex_main_decoder_amo)
+);
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_lr_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (id_main_decoder_lr)
+  ,.o_pipe_out   (ex_main_decoder_lr)
+);
+
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_sc_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (id_main_decoder_sc)
+  ,.o_pipe_out   (ex_main_decoder_sc)
+);
+
+
 
 riscv_core_pipe 
 #(
@@ -1132,6 +1209,64 @@ u_riscv_core_pipe_resultsrc_ex_mem
 
 riscv_core_pipe 
 #(
+  .W_PIPE_BUS (4)
+)
+u_riscv_core_pipe_amo_op_ex_mem
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (ex_main_decoder_amo_op)
+  ,.o_pipe_out   (mem_main_decoder_amo_op)
+);
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_amo_ex_mem
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (ex_main_decoder_amo)
+  ,.o_pipe_out   (mem_main_decoder_amo)
+);
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_lr_ex_mem
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (ex_main_decoder_lr)
+  ,.o_pipe_out   (mem_main_decoder_lr)
+);
+
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_sc_ex_mem
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (ex_main_decoder_sc)
+  ,.o_pipe_out   (mem_main_decoder_sc)
+);
+
+
+riscv_core_pipe 
+#(
   .W_PIPE_BUS (1)
 )
 u_riscv_core_pipe_memwrite_ex_mem
@@ -1234,7 +1369,7 @@ u_riscv_core_pipe_csr_wen_ex_mem
 //----------------------------------//
 //-------------MEM Stage------------//
 //----------------------------------//
-riscv_core_data_mem
+/*riscv_core_data_mem
 #(
   .XLEN (64)
   ,.MWID(8)
@@ -1250,7 +1385,54 @@ u_riscv_core_data_mem
   ,.i_data_mem_address     (ex_mem_pipe_alu_result)
   ,.i_data_mem_wdata       (ex_mem_pipe_wd)
   ,.o_data_mem_rdata       (read_data_mem)
+);*/
+
+riscv_core_dcache_top#(
+    .BLOCK_OFFSET(2)
+    ,.INDEX_WIDTH(7)
+    ,.TAG_WIDTH(20)
+    ,.CORE_DATA_WIDTH(64)
+    ,.ADDR_WIDTH(64)
+    ,.AXI_DATA_WIDTH(256)
+)
+u_riscv_core_dcache_top
+(
+    // Interface with CORE//
+    .i_clk(i_riscv_core_clk)
+    ,.i_rst_n(i_riscv_core_rst_n)
+    ,.i_data_from_core(ex_mem_pipe_wd)
+    ,.i_addr_from_core(ex_mem_pipe_alu_result)
+    ,.i_read()/////////////////////////////not connected yet
+    ,.i_write(ex_mem_pipe_memwrite)
+    ,.i_size(ex_mem_pipe_size)
+    ,.i_amo_op(mem_main_decoder_amo_op)
+    ,.i_amo(mem_main_decoder_amo)
+    ,.i_lr(mem_main_decoder_lr)
+    ,.i_sc(mem_main_decoder_sc)
+    ,.o_stall(d_chache_stall)/////////////////////////////not connected yet to hazard
+    ,.o_data_to_core(read_data_mem)
+    ,.o_store_fault(store_fault)
+    ,.o_load_fault(load_fault)
+    ,.o_amo_fault(amo_fault)
+   // Interface with AXI READ CHANNEL //
+
+    ,.o_mem_read_address()/////////////////////////////not connected yet
+    ,.o_mem_read_req()/////////////////////////////not connected yet
+    ,.i_mem_read_done()/////////////////////////////not connected yet
+    ,.i_block_from_axi()/////////////////////////////not connected yet
+    
+    // Interface with AXI WRITE CHANNEL //
+
+    ,.i_mem_write_done()/////////////////////////////not connected yet
+    ,.o_mem_write_valid()/////////////////////////////not connected yet
+    ,.o_mem_write_data()/////////////////////////////not connected yet
+    ,.o_mem_write_address()/////////////////////////////not connected yet
+    ,.o_mem_write_strobe()/////////////////////////////not connected yet
 );
+
+
+
+
 
 //----------------------------------//
 //-----------MEM/WB Pipe------------//
@@ -1431,6 +1613,7 @@ u_riscv_core_mux4x1
   ,.o_mux4x1_out(result_wb)
 );
 
+assign csr_store_fault = store_fault || amo_fault;
 
 riscv_core_csr_unit
 (
@@ -1438,7 +1621,7 @@ riscv_core_csr_unit
   ,.i_csr_unit_rst_n(i_riscv_core_rst_n)
   ,.i_csr_unit_pc(csr_pc)
   ,.i_csr_unit_mem_wen(ex_mem_pipe_memwrite)
-  ,.i_csr_unit_fault_addr()/////////////////from cache
+  ,.i_csr_unit_fault_addr(ex_mem_pipe_alu_result)
   ,.i_csr_unit_instr(csr_instr)
     //external interrupts
   ,.i_csr_unit_mexternal(i_riscv_core_external_interrupt)
@@ -1463,8 +1646,8 @@ riscv_core_csr_unit
   ,.i_csr_unit_illegal_instr_id(illegal_input_to_csr)
   ,.i_csr_unit_illegal_instr_exe(m_ext_divby0)//still there's some editing here
   ,.i_csr_unit_instr_addr_misaligned(instr_addr_miss_ex)
-  ,.i_csr_unit_lw_access_fault()//from cache
-  ,.i_csr_unit_sw_access_fault()//from cache
+  ,.i_csr_unit_lw_access_fault(load_fault)
+  ,.i_csr_unit_sw_access_fault(csr_store_fault)
     //flush signals
   ,.o_csr_unit_if_flush(csr_if_flush)///////for hazard don't forget
   ,.o_csr_unit_id_flush(csr_id_flush)///////for hazard don't forget
@@ -1542,12 +1725,15 @@ u_riscv_core_hazard_unit
     ,.i_hazard_unit_resultsrc_ex  (id_ex_pipe_resultsrc)
     ,.i_hazard_unit_pcsrc_ex      (pcsrc_ex)
     // C Extension
-    ,.i_hazard_unit_illegal_instr (instr_is_illegal_comp)
+    //,.i_hazard_unit_illegal_instr (instr_is_illegal_comp)
     // M Extension
     ,.i_hazard_unit_mdone         (m_ext_done)
     ,.i_hazard_unit_mbusy         (m_ext_busy)
     ,.i_hazard_unit_mdivby0       (m_ext_divby0)
     ,.i_hazard_unit_mof           (m_ext_of)
+    // Caches requests
+    ,.i_hazard_unit_dcache_stall(d_chache_stall)
+    //,.i_hazard_unit_icache_stall() /////////////////////////////not connected yet
     // Forwarding outputs
     ,.o_hazard_unit_forwarda_ex   (hu_forward_a)
     ,.o_hazard_unit_forwardb_ex   (hu_forward_b)
