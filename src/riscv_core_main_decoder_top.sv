@@ -32,7 +32,8 @@ module riscv_core_main_decoder_top (
     output logic       o_main_decoder_sc,
     output logic       o_main_decoder_src_sel,
     output logic [1:0] o_main_decoder_op,
-    output logic       o_main_decoder_illegal
+    output logic       o_main_decoder_illegal,
+    output logic       o_main_decoder_read
 
 );
     
@@ -56,7 +57,6 @@ module riscv_core_main_decoder_top (
     ,.o_main_decoder_UCtrl(o_main_decoder_UCtrl)
     ,.o_main_decoder_resultsrc(o_main_decoder_resultsrc)
     ,.o_main_decoder_regwrite(o_main_decoder_regwrite)
-    ,.o_main_decoder_regwrite(o_main_decoder_regwrite)
     ,.o_main_decoder_alusrcB(o_main_decoder_alusrcB)
     ,.o_main_decoder_memwrite(o_main_decoder_memwrite)
     ,.o_main_decoder_branch(o_main_decoder_branch)
@@ -75,6 +75,7 @@ module riscv_core_main_decoder_top (
     ,.o_main_decoder_src_sel(o_main_decoder_src_sel)
     ,.o_main_decoder_op(o_main_decoder_op)
     ,.o_main_decoder_illegal(o_id_illegal)
+    ,.o_main_decoder_read(o_main_decoder_read)
     );
 
     assign o_main_decoder_illegal = o_id_illegal || i_main_decoder_if_illegal;

@@ -23,7 +23,8 @@ module riscv_core_main_decoder (
     output logic       o_main_decoder_sc,
     output logic       o_main_decoder_src_sel,
     output logic [1:0] o_main_decoder_op,
-    output logic       o_main_decoder_illegal
+    output logic       o_main_decoder_illegal,
+    output logic       o_main_decoder_read
 
 );
 
@@ -251,6 +252,36 @@ case (i_main_decoder_opcode)
 endcase
 
 end
+
+
+
+
+
+///////////////////
+/// READ LOGIC ////
+///////////////////
+
+always_comb begin : READ_LOGIC
+
+o_main_decoder_read = 0;
+
+case (i_main_decoder_opcode)
+
+    7'b0000011: o_main_decoder_read = 1;
+    7'b0110111: o_main_decoder_read = 1;
+    7'b0101111: begin
+        o_main_decoder_read = 1;
+        if(funct5 == 5'b00011)
+        o_main_decoder_read = 0;
+    end
+
+    default: o_main_decoder_read = 0;
+endcase
+
+end
+
+
+
 
 //////////////////////////////////
 /// ILLEGAL INSTRUCTION LOGIC ////
