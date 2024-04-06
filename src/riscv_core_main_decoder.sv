@@ -294,8 +294,7 @@ o_main_decoder_illegal = 1;
 case (i_main_decoder_opcode)
 
 
-   7'b0110011:   o_main_decoder_illegal = 0;
-   7'b0111011:   o_main_decoder_illegal = 0;
+   7'b0000000:   o_main_decoder_illegal = 0;
    7'b0010011:   o_main_decoder_illegal = 0; // I-Type except word instructions
 
    7'b0011011:   o_main_decoder_illegal = 0; // I-Type for word instructions
