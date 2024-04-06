@@ -70,6 +70,7 @@ logic [3:0]  id_main_decoder_amo_op;
 logic        id_main_decoder_amo;
 logic        id_main_decoder_lr;
 logic        id_main_decoder_sc;
+logic        id_cahce_read;
 
 
 //-------------EX Intermediate Signals-------------//
@@ -100,6 +101,7 @@ logic [3:0]  ex_main_decoder_amo_op;
 logic        ex_main_decoder_amo;
 logic        ex_main_decoder_lr;
 logic        ex_main_decoder_sc;
+logic        ex_cahce_read;
 
 logic [63:0] new_mux_out;
 
@@ -119,6 +121,7 @@ logic        load_fault;
 logic        store_fault;
 logic        amo_fault;
 logic        d_chache_stall;
+logic        mem_cahce_read;
 
 //-------------WB Intermediate Signals-------------//
 logic [63:0] result_wb;
@@ -183,8 +186,8 @@ logic        csr_id_flush;
 logic        csr_if_flush;
 logic [63:0] csr_pc_trap_stg1;
 logic [63:0] csr_pc;
-logic [63:0] csr_instr_stg1;
-logic [63:0] csr_instr;
+logic [31:0] csr_instr_stg1;
+logic [31:0] csr_instr;
 logic        csr_wen_wb;
 logic        csr_store_fault;
 
@@ -409,6 +412,7 @@ u_riscv_core_main_decoder
   ,.o_main_decoder_src_sel(csr_src_sel_id)
   ,.o_main_decoder_op(csr_op_id)
   ,.o_main_decoder_illegal(illegal_input_to_csr)
+  ,.o_main_decoder_read(id_cahce_read)
 );
 
 riscv_core_rf
@@ -649,6 +653,22 @@ u_riscv_core_pipe_amo_id_ex
   ,.i_pipe_in    (id_main_decoder_amo)
   ,.o_pipe_out   (ex_main_decoder_amo)
 );
+
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_cache_read_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (id_cahce_read)
+  ,.o_pipe_out   (ex_cahce_read)
+);
+
 
 riscv_core_pipe 
 #(
@@ -1004,6 +1024,8 @@ u_riscv_core_branch_unit
   ,.i_branch_unit_srcB   (src_b_out)
   ,.i_branch_unit_funct3 (id_ex_pipe_funct3)
   ,.o_branch_unit_istaken(istaken_ex)
+  ,.i_branch_unit_targetPC(mux_to_stg2[1:0])
+  ,.i_branch_unit_enable(id_ex_pipe_branch)
   ,.o_branch_unit_addr_mismatch(instr_addr_miss_ex) ////////////////for CSR direct
 );
 
@@ -1131,7 +1153,7 @@ u_riscv_core_pipe_pc_plus_ex_mem
 
 riscv_core_pipe 
 #(
-  .W_PIPE_BUS (64)
+  .W_PIPE_BUS (32)
 )
 u_riscv_core_pipe_instruction_ex_mem
 (
@@ -1198,6 +1220,20 @@ u_riscv_core_pipe_amo_ex_mem
   ,.i_pipe_en_n  (hu_stall_mem)
   ,.i_pipe_in    (ex_main_decoder_amo)
   ,.o_pipe_out   (mem_main_decoder_amo)
+);
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_cache_read_ex_mem
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
+  ,.i_pipe_in    (ex_cahce_read)
+  ,.o_pipe_out   (mem_cahce_read)
 );
 
 riscv_core_pipe 
@@ -1335,6 +1371,9 @@ u_riscv_core_pipe_csr_wen_ex_mem
 //-------------MEM Stage------------//
 //----------------------------------//
 
+logic [63:0] mem_read_address,o_mem_write_data,o_mem_write_address;
+logic [255:0] i_block_from_axi;
+logic mem_read_req,mem_read_done,i_mem_write_done,o_mem_write_valid;
 riscv_core_dcache_top#(
     .BLOCK_OFFSET(2)
     ,.INDEX_WIDTH(7)
@@ -1350,7 +1389,7 @@ u_riscv_core_dcache_top
     ,.i_rst_n(i_riscv_core_rst_n)
     ,.i_data_from_core(ex_mem_pipe_wd)
     ,.i_addr_from_core(ex_mem_pipe_alu_result)
-    ,.i_read()/////////////////////////////not connected yet
+    ,.i_read(mem_cahce_read)
     ,.i_write(ex_mem_pipe_memwrite)
     ,.i_size(ex_mem_pipe_size)
     ,.i_amo_op(mem_main_decoder_amo_op)
@@ -1364,18 +1403,41 @@ u_riscv_core_dcache_top
     ,.o_amo_fault(amo_fault)
    // Interface with AXI READ CHANNEL //
 
-    ,.o_mem_read_address()/////////////////////////////not connected yet
-    ,.o_mem_read_req()/////////////////////////////not connected yet
-    ,.i_mem_read_done()/////////////////////////////not connected yet
-    ,.i_block_from_axi()/////////////////////////////not connected yet
+    ,.o_mem_read_address(mem_read_address)
+    ,.o_mem_read_req(mem_read_req)/////////////////////////////not connected yet
+    ,.i_mem_read_done(mem_read_done)/////////////////////////////not connected yet
+    ,.i_block_from_axi(i_block_from_axi)/////////////////////////////not connected yet
     
     // Interface with AXI WRITE CHANNEL //
 
-    ,.i_mem_write_done()/////////////////////////////not connected yet
-    ,.o_mem_write_valid()/////////////////////////////not connected yet
-    ,.o_mem_write_data()/////////////////////////////not connected yet
-    ,.o_mem_write_address()/////////////////////////////not connected yet
+    ,.i_mem_write_done(i_mem_write_done)/////////////////////////////not connected yet
+    ,.o_mem_write_valid(o_mem_write_valid)/////////////////////////////not connected yet
+    ,.o_mem_write_data(o_mem_write_data)/////////////////////////////not connected yet
+    ,.o_mem_write_address(o_mem_write_address)/////////////////////////////not connected yet
     ,.o_mem_write_strobe()/////////////////////////////not connected yet
+);
+
+main_mem #(
+    .MEM_DEPTH(12)
+    ,.DATA_WIDTH(64)
+    ,.ADDR_WIDTH(64)
+    ,.AXI_DATA_WIDTH(256)
+)
+u_main_mem
+(
+    .i_clk(i_riscv_core_clk)
+    ,.i_rst_n(i_riscv_core_rst_n)
+    // Interface with AXI READ CHANNEL //
+    ,.o_mem_read_address(mem_read_address)
+    ,.o_mem_read_req(mem_read_req)
+    ,.i_mem_read_done(mem_read_done)
+    ,.i_block_from_axi(i_block_from_axi)
+    // Interface with AXI WRITE CHANNEL //
+    ,.i_mem_write_done(i_mem_write_done)
+    ,.o_mem_write_valid(o_mem_write_valid)
+    ,.o_mem_write_data(o_mem_write_data)
+    ,.o_mem_write_address(o_mem_write_address)
+    ,.i_size(ex_mem_pipe_size)
 );
 
 
@@ -1444,7 +1506,7 @@ u_riscv_core_pipe_rd_mem_wb
 
 riscv_core_pipe 
 #(
-  .W_PIPE_BUS (64)
+  .W_PIPE_BUS (32)
 )
 u_riscv_core_pipe_instruction_mem_wb
 (
@@ -1561,6 +1623,7 @@ u_riscv_core_mux4x1
 assign csr_store_fault = store_fault || amo_fault;
 
 riscv_core_csr_unit
+u_riscv_core_csr_unit
 (
   .i_csr_unit_clk(i_riscv_core_clk)
   ,.i_csr_unit_rst_n(i_riscv_core_rst_n)
@@ -1578,7 +1641,7 @@ riscv_core_csr_unit
   ,.i_csr_unit_csr_addr(instr_wb[31:20])
   ,.o_csr_unit_csr_rdata(csr_rdata_wb)
     //exception handling signals
-  ,.o_csr_unit_irq_handler(trap_addr_id)
+  ,.o_csr_unit_irq_handler(trap_addr_if)
   ,.o_csr_unit_mepc(mepc_if)
   ,.o_csr_unit_addr_ctrl(trap_cntrl_wb)
   ,.o_csr_unit_mux1(pc_cntrl_wb)
@@ -1626,7 +1689,7 @@ u_riscv_core_mux2x1_stg2_pc_trap
 
 riscv_core_mux2x1
 #(
-  .XLEN (64)
+  .XLEN (32)
 )
 u_riscv_core_mux2x1_stg1_instr_csr
 (
@@ -1638,7 +1701,7 @@ u_riscv_core_mux2x1_stg1_instr_csr
 
 riscv_core_mux2x1
 #(
-  .XLEN (64)
+  .XLEN (32)
 )
 u_riscv_core_mux2x1_stg2_instr_csr
 (
