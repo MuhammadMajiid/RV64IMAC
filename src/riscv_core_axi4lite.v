@@ -2,7 +2,7 @@ module riscv_core_axi4lite
 #
 (
     parameter ADDR_WIDTH     = 64,
-    parameter AXI_DATA_WIDTH = 256,
+    parameter AXI_DATA_WIDTH = 64,
     parameter STRB_WIDTH     = $clog2(AXI_DATA_WIDTH)
 )
 (
@@ -18,26 +18,26 @@ module riscv_core_axi4lite
     input  wire [ADDR_WIDTH-1:0]     saxi_araddr,
     input  wire [2:0]                saxi_arprot,
     input  wire                      saxi_arvalid,
-    output reg                      saxi_arready,
+    output reg                       saxi_arready,
     /*Read Data Channel*/
-    output reg [AXI_DATA_WIDTH-1:0] saxi_rdata,
-    output reg [1:0]                saxi_rresp,
-    output reg                      saxi_rvalid,
+    output reg [AXI_DATA_WIDTH-1:0]  saxi_rdata,
+    output reg [1:0]                 saxi_rresp,
+    output reg                       saxi_rvalid,
     input  wire                      saxi_rready,
     /*Write Address Channel*/
     input  wire [ADDR_WIDTH-1:0]     saxi_awaddr,
     input  wire [2:0]                saxi_awprot,
     input  wire                      saxi_awvalid,
-    output reg                      saxi_awready,
+    output reg                       saxi_awready,
     /*Write Data Channel*/
     input  wire [AXI_DATA_WIDTH-1:0] saxi_wdata,
     input  wire [STRB_WIDTH-1:0]     saxi_wstrb,
     input  wire                      saxi_wvalid,
-    output reg                      saxi_wready,
+    output reg                       saxi_wready,
     /*Write Response Channel*/
     input  wire                      saxi_bready,
-    output reg                      saxi_bvalid,
-    output reg [1:0]                saxi_bresp,
+    output reg                       saxi_bvalid,
+    output reg [1:0]                 saxi_bresp,
     /*
         Master Interface
     */

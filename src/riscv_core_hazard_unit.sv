@@ -29,6 +29,12 @@ module riscv_core_hazard_unit
     input logic i_hazard_unit_dcache_stall,
     input logic i_hazard_unit_icache_stall,
 
+    // CSR inputs
+    input logic i_hazard_unit_csr_if_flush,
+    input logic i_hazard_unit_csr_id_flush,
+    input logic i_hazard_unit_csr_ex_flush,
+    input logic i_hazard_unit_csr_mem_flush,
+
     // Forwarding outputs
     output logic [1:0] o_hazard_unit_forwarda_ex,
     output logic [1:0] o_hazard_unit_forwardb_ex,
@@ -41,8 +47,10 @@ module riscv_core_hazard_unit
     output logic o_hazard_unit_stall_wb,
 
     // Flush outputs
+    output logic o_hazard_unit_flush_if,
     output logic o_hazard_unit_flush_id,
     output logic o_hazard_unit_flush_ex,
+    output logic o_hazard_unit_flush_mem,
 
     // Exceptions
     output logic o_hazard_unit_exception
@@ -108,8 +116,10 @@ end
 
 always_comb 
 begin : flush_proc
-    o_hazard_unit_flush_ex = (lwstall_detection || i_hazard_unit_pcsrc_ex);
-    o_hazard_unit_flush_id = i_hazard_unit_pcsrc_ex;
+    o_hazard_unit_flush_if  = i_hazard_unit_csr_if_flush;
+    o_hazard_unit_flush_id  = i_hazard_unit_pcsrc_ex || i_hazard_unit_csr_id_flush;
+    o_hazard_unit_flush_ex  = (lwstall_detection || i_hazard_unit_pcsrc_ex) || i_hazard_unit_csr_ex_flush;
+    o_hazard_unit_flush_mem = i_hazard_unit_csr_flush_mem;
 end
 
 //---------------------------------Exceptions---------------------------------\\
