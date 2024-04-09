@@ -149,7 +149,6 @@ logic [63:0] TRAP_PC;
 //---DECODE STAGE---//
 logic csr_src_sel_id;
 logic [1:0]  csr_op_id;
-logic [63:0] csr_src_id;
 logic        ecall_id;
 logic        ebreak_id;
 logic        mret_id;
@@ -157,6 +156,7 @@ logic        illegal_input_to_csr;
 logic        csr_wen_id;
 
 //---EXECUTION STAGE---//
+logic csr_src_sel_ex;
 logic [31:0] instr_ex;
 logic [1:0]  csr_op_ex;
 logic [63:0] csr_src_ex;
@@ -285,7 +285,7 @@ riscv_core_imem
   .ALEN (64)
   ,.ILEN(32)
   ,.MWID(8)
-  ,.MLEN(10000)
+  ,.MLEN(13000)
 )
 u_riscv_core_imem
 (
@@ -437,17 +437,7 @@ u_riscv_core_immextend
   ,.o_immextend_out    (immext_id)              //extended output
 );
 
-riscv_core_mux2x1
-#(
-  .XLEN (64)
-)
-u_riscv_core_mux2x1_csr_src
-(
-  .i_mux2x1_in0 (rd1_id)
-  ,.i_mux2x1_in1(immext_id)
-  ,.i_mux2x1_sel(csr_src_sel_id)
-  ,.o_mux2x1_out(csr_src_id)
-);
+
 
 //----------------------------------//
 //------------ID/EX Pipe------------//
@@ -595,19 +585,6 @@ u_riscv_core_pipe_immext_id_ex
   ,.o_pipe_out   (id_ex_pipe_imm)
 );
 
-riscv_core_pipe 
-#(
-  .W_PIPE_BUS (64)
-)
-u_riscv_core_pipe_csr_src_id_ex
-(
-  .i_pipe_clk    (i_riscv_core_clk)
-  ,.i_pipe_rst_n (i_riscv_core_rst_n)
-  ,.i_pipe_clr   (hu_flush_ex)
-  ,.i_pipe_en_n  (hu_stall_ex)
-  ,.i_pipe_in    (csr_src_id)
-  ,.o_pipe_out   (csr_src_ex)
-);
 
 
 //---------Control Signals----------//
@@ -624,6 +601,24 @@ u_riscv_core_pipe_resultsrc_id_ex
   ,.i_pipe_in    (resultsrc_id)
   ,.o_pipe_out   (id_ex_pipe_resultsrc)
 );
+
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_csr_src_sel_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (csr_src_sel_id)
+  ,.o_pipe_out   (csr_src_sel_ex)
+);
+
+
+
 
 riscv_core_pipe 
 #(
@@ -930,6 +925,18 @@ u_riscv_core_pipe_csr_wen_id_ex
 //----------------------------------//
 //-------------EX Stage-------------//
 //----------------------------------//
+//////////////////////////////////////////////////////////////////////////////////////////
+riscv_core_mux2x1
+#(
+  .XLEN (64)
+)
+u_riscv_core_mux2x1_csr_src
+(
+  .i_mux2x1_in0 (src_a_ex)
+  ,.i_mux2x1_in1(id_ex_pipe_imm)
+  ,.i_mux2x1_sel(csr_src_sel_ex)
+  ,.o_mux2x1_out(csr_src_ex)
+);
 
 riscv_core_mux3x1
 #(
@@ -1646,7 +1653,6 @@ u_riscv_core_csr_unit
   ,.o_csr_unit_addr_ctrl(trap_cntrl_wb)
   ,.o_csr_unit_mux1(pc_cntrl_wb)
     //machine mode instructions
-  ,.i_csr_unit_mret_id(mret_id)
   ,.i_csr_unit_mret_wb(mret_wb)
   ,.i_csr_unit_ecall(ecall_id)
   ,.i_csr_unit_ebreak(ebreak_id)
@@ -1669,12 +1675,16 @@ riscv_core_mux2x1
 )
 u_riscv_core_mux2x1_stg1_pc_trap
 (
-  .i_mux2x1_in0 (if_id_pipe_pc)
-  ,.i_mux2x1_in1(id_ex_pipe_pc)
+  .i_mux2x1_in0 (if_pipe_pcf_new)
+  ,.i_mux2x1_in1(if_id_pipe_pc)
   ,.i_mux2x1_sel(csr_ex_flush)
   ,.o_mux2x1_out(csr_pc_trap_stg1)
 );
 
+//if_pipe_pcf_new
+//if_id_pipe_pc
+//id_ex_pipe_pc
+//pc_mem
 riscv_core_mux2x1
 #(
   .XLEN (64)
@@ -1682,7 +1692,7 @@ riscv_core_mux2x1
 u_riscv_core_mux2x1_stg2_pc_trap
 (
   .i_mux2x1_in0 (csr_pc_trap_stg1)
-  ,.i_mux2x1_in1(pc_mem)
+  ,.i_mux2x1_in1(id_ex_pipe_pc)
   ,.i_mux2x1_sel(csr_mem_flush)
   ,.o_mux2x1_out(csr_pc)
 );

@@ -46,6 +46,6 @@ always_comb
     istaken = 1'b0;
   end
 
-assign o_branch_unit_addr_mismatch = istaken && (i_branch_unit_targetPC[0] ||  i_branch_unit_targetPC[1]);
+assign o_branch_unit_addr_mismatch = istaken && (i_branch_unit_targetPC[0]);
 assign o_branch_unit_istaken = istaken;
 endmodule
