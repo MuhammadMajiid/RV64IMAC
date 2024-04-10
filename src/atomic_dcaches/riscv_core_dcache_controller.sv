@@ -194,7 +194,7 @@ case (STATE)
                     else
                     o_rd_en = 0;
                 end
-                else begin // READ MISS
+                else if(!tag_hit && !fault) begin // READ MISS
 
                     o_stall = 1;
                     o_mem_read_req = 1;
@@ -219,7 +219,7 @@ case (STATE)
                     else
                     o_rd_en = 0;
                 end
-                else begin // READ MISS
+                else if(!tag_hit && !fault) begin // READ MISS
 
                     o_stall = 1;
                     o_mem_read_req = 1;
@@ -243,7 +243,7 @@ case (STATE)
                        o_wr_en = 0;
                        end 
                     end  
-                else begin // WRITE MISS
+                else if(!tag_hit && !fault) begin // WRITE MISS
 
                     o_stall = 1;
                     o_mem_read_req = 1;
@@ -270,7 +270,7 @@ case (STATE)
                        o_sc_result = 1;
                        end 
                     end  
-                else begin // WRITE MISS
+                else if(!tag_hit && !fault) begin // WRITE MISS
 
                     o_stall = 1;
                     o_mem_read_req = 1;
@@ -293,7 +293,7 @@ case (STATE)
                     else
                     o_rd_en = 0;
                 end
-                else begin // AMO_READ MISS
+                else if(!tag_hit && !fault) begin // AMO_READ MISS
 
                     o_stall = 1;
                     o_mem_read_req = 1;
