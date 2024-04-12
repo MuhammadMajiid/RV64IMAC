@@ -138,7 +138,6 @@ logic        hu_flush_id;
 logic        hu_flush_ex;
 logic        hu_flush_mem;
 logic        hu_flush_wb;
-logic        hu_exception;
 //----------------CSR Signals------------------------//
 //---FETCH STAGE---//
 logic [63:0] mepc_if;
@@ -1658,7 +1657,7 @@ u_riscv_core_csr_unit
   ,.i_csr_unit_ebreak(ebreak_id)
     //exception signals
   ,.i_csr_unit_illegal_instr_id(illegal_input_to_csr)
-  ,.i_csr_unit_illegal_instr_exe(m_ext_divby0)//still there's some editing here
+  ,.i_csr_unit_illegal_instr_exe(1'b0)//still there's some editing here
   ,.i_csr_unit_instr_addr_misaligned(instr_addr_miss_ex)
   ,.i_csr_unit_lw_access_fault(load_fault)
   ,.i_csr_unit_sw_access_fault(csr_store_fault)
@@ -1747,8 +1746,6 @@ u_riscv_core_hazard_unit
     // M Extension
     ,.i_hazard_unit_mdone         (m_ext_done)
     ,.i_hazard_unit_mbusy         (m_ext_busy)
-    ,.i_hazard_unit_mdivby0       (m_ext_divby0)
-    ,.i_hazard_unit_mof           (m_ext_of)
     // Caches requests
     ,.i_hazard_unit_dcache_stall(d_chache_stall)
     ,.i_hazard_unit_icache_stall(1'b0) /////////////////////////////not connected yet
@@ -1766,8 +1763,6 @@ u_riscv_core_hazard_unit
     ,.o_hazard_unit_flush_ex      (hu_flush_ex)
     ,.o_hazard_unit_flush_mem     (hu_flush_mem)
     ,.o_hazard_unit_flush_wb      (hu_flush_wb)
-    // Exceptions
-    ,.o_hazard_unit_exception     (hu_exception)
     //CSR inputs
     ,.i_hazard_unit_csr_flush_id  (csr_if_flush)
     ,.i_hazard_unit_csr_flush_ex  (csr_id_flush)

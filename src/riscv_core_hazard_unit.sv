@@ -22,8 +22,6 @@ module riscv_core_hazard_unit
     // M Extension requests
     input logic i_hazard_unit_mdone,
     input logic i_hazard_unit_mbusy,
-    input logic i_hazard_unit_mdivby0,
-    input logic i_hazard_unit_mof,
 
     // Caches requests
     input logic i_hazard_unit_dcache_stall,
@@ -45,9 +43,6 @@ module riscv_core_hazard_unit
     output logic o_hazard_unit_flush_ex,
     output logic o_hazard_unit_flush_mem,
     output logic o_hazard_unit_flush_wb,
-
-    // Exceptions
-    output logic o_hazard_unit_exception,
 
     //CSR inputs
     input  logic i_hazard_unit_csr_flush_id,
@@ -122,8 +117,4 @@ begin : flush_proc
     o_hazard_unit_flush_wb  = i_hazard_unit_csr_flush_wb;
 end
 
-//---------------------------------Exceptions---------------------------------\\
-always_comb begin : exceptions_proc
-    o_hazard_unit_exception = ( i_hazard_unit_mdivby0 || i_hazard_unit_mof);
-end
 endmodule
