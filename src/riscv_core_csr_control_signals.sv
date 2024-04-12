@@ -28,7 +28,7 @@ end
 else if(i_csr_control_instr[6:0] == 6'h73)
 o_csr_illegal = 0;
 else
-o_csr_illegal = 1;
+o_csr_illegal = 0;
 
 end
 
