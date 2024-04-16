@@ -1173,6 +1173,11 @@ u_riscv_core_hazard_unit
     // caches requests
     ,.i_hazard_unit_icache_stall  (icache_hu_stall)
     ,.i_hazard_unit_dcache_stall  (dcache_hu_stall)
+    // CSR inputs
+    ,.i_hazard_unit_csr_if_flush         (csr_if_flush)
+    ,.i_hazard_unit_csr_id_flush         (csr_id_flush)
+    ,.i_hazard_unit_csr_ex_flush         (csr_ex_flush)
+    ,.i_hazard_unit_csr_mem_flush        (csr_mem_flush)
     // Forwarding outputs
     ,.o_hazard_unit_forwarda_ex   (hu_forward_a)
     ,.o_hazard_unit_forwardb_ex   (hu_forward_b)
