@@ -8,10 +8,10 @@ module riscv_core_top
   parameter I_TAG_WIDTH        = 20,
   parameter I_CORE_DATA_WIDTH  = 32,
   parameter ADDR_WIDTH         = 64,
-  parameter AXI_DATA_WIDTH     = 256,
+  parameter AXI_DATA_WIDTH     = 64,
   parameter D_TAG_WIDTH        = 52,
   parameter D_CORE_DATA_WIDTH  = 64,
-  parameter STRB_WIDTH         = $clog2(AXI_DATA_WIDTH)
+  parameter STRB_WIDTH         = 8
 )
 (
   // Global inputs
