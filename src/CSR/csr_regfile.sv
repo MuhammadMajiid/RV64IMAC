@@ -337,8 +337,30 @@ begin:trap_setup_proc
 
                 if (i_csr_unit_csr_wen)
                   begin
-                    if (i_csr_unit_csr_addr == `csr_mcause)
+                    if (i_csr_unit_mret_wb)
+                     `mstatus_mpp <= 2'b00;
+
+                    else if (i_csr_unit_sret)
+                     `sstatus_spp <= 1'b0;
+
+                    else if (i_csr_unit_csr_addr == `csr_mstatus)
+                     begin
+                      `mstatus_mpp  <= op_result[12:11];
+                      `mstatus_spp  <= op_result[8];
+                     end
+
+                    else if (i_csr_unit_csr_addr == `csr_sstatus)
+                     `sstatus_spp  <= op_result[8];
+
+
+                    else if (i_csr_unit_csr_addr == `csr_mcause)
                       mcause <= op_result;
+
+                    else if (i_csr_unit_csr_addr == `csr_mepc)
+                      mepc <= op_result;
+
+                    else if (i_csr_unit_csr_addr == `csr_sepc)
+                      sepc <= op_result;
 
                     else if (i_csr_unit_csr_addr == `csr_mtval)
                       mtval <= op_result;
@@ -741,14 +763,12 @@ if (!i_csr_unit_rst_n)
         begin
             `mstatus_mie  <= `mstatus_mpie;
             `mstatus_mpie <= 1'b1;
-            `mstatus_mpp  <= 2'b00;
         end
 
         else if (i_csr_unit_sret)
         begin
             `sstatus_sie  <= `sstatus_spie;
             `sstatus_spie <= 1'b1;
-            `sstatus_spp  <= 1'b0;
         end
 
         else
@@ -759,17 +779,14 @@ if (!i_csr_unit_rst_n)
                  begin
                     `mstatus_mie  <= op_result[3];
                     `mstatus_mpie <= op_result[7];
-                    `mstatus_mpp  <= op_result[12:11];
                     `mstatus_sie  <= op_result[1];
                     `mstatus_spie <= op_result[5];
-                    `mstatus_spp  <= op_result[8];
                  end
 
               `csr_sstatus:
                  begin
                     `sstatus_sie  <= op_result[1];
                     `sstatus_spie <= op_result[5];
-                    `sstatus_spp  <= op_result[8];
                  end
 
               `csr_mie:
@@ -784,11 +801,6 @@ if (!i_csr_unit_rst_n)
               `csr_mtvec:
                  begin
                     mtvec <= op_result;
-                 end
-
-              `csr_mepc:
-                 begin
-                    mepc <= op_result;
                  end
 
               `csr_mscratch:
@@ -811,11 +823,6 @@ if (!i_csr_unit_rst_n)
               `csr_stvec:
                  begin
                     stvec <= op_result;
-                 end
-
-              `csr_sepc:
-                 begin
-                    sepc <= op_result;
                  end
 
               `csr_sscratch:
