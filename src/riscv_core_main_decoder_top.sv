@@ -47,6 +47,7 @@ module riscv_core_main_decoder_top (
     assign i_main_decoder_funct7 = i_instr[31:25];
 
     logic o_id_illegal;
+    logic o_csr_illegal;
 
 
     riscv_core_main_decoder u1 (
@@ -78,7 +79,7 @@ module riscv_core_main_decoder_top (
     ,.o_main_decoder_read(o_main_decoder_read)
     );
 
-    assign o_main_decoder_illegal = o_id_illegal || i_main_decoder_if_illegal;
+    assign o_main_decoder_illegal = o_id_illegal || i_main_decoder_if_illegal || o_csr_illegal;
 
     riscv_core_csr_control_signals u2 (
         .i_csr_control_instr(i_instr)
@@ -86,6 +87,7 @@ module riscv_core_main_decoder_top (
         ,.o_csr_control_mret(o_csr_control_mret)
         ,.o_csr_control_ecall(o_csr_control_ecall)
         ,.o_csr_control_ebreak(o_csr_control_ebreak)
+        ,.o_csr_illegal(o_csr_illegal)
     );
 
 endmodule

@@ -55,7 +55,7 @@ module riscv_core_csr_unit(
 
     input  logic                    i_csr_unit_clk,
     input  logic                    i_csr_unit_rst_n,
-    input  logic  [`instr_addr-1:0] i_csr_unit_pc,                    //input PC
+    input  logic  [`XLEN-1:0] i_csr_unit_pc,                    //input PC
     input  logic                    i_csr_unit_mem_wen,               //memory write enable signal
     input  logic  [`XLEN-1:0]       i_csr_unit_fault_addr,            //fault address from load or store operation
     input  logic  [`instr_addr-1:0] i_csr_unit_instr,
@@ -72,13 +72,12 @@ module riscv_core_csr_unit(
     output logic  [`XLEN-1:0]       o_csr_unit_csr_rdata,             //data read from the csr
 
     //exception handling signals
-    output logic [`instr_addr-1:0]  o_csr_unit_irq_handler,           //trap handler address
-    output logic [`instr_addr-1:0]  o_csr_unit_mepc,                  //return address
+    output logic [`XLEN-1:0]        o_csr_unit_irq_handler,           //trap handler address
+    output logic [`XLEN-1:0]        o_csr_unit_mepc,                  //return address
     output logic                    o_csr_unit_addr_ctrl,             //select between mepc and irq_handler
     output logic                    o_csr_unit_mux1,
 
     //machine mode instructions
-    input  logic                   i_csr_unit_mret_id,
     input  logic                   i_csr_unit_mret_wb,
     input  logic                   i_csr_unit_ecall,
     input  logic                   i_csr_unit_ebreak,
@@ -126,8 +125,8 @@ state current_state;
 
 
 //trap address modes
-logic [`instr_addr-1 :0] direct_addr, vector_addr;
-logic [`instr_addr-1 :0] intrr_addr, expn_addr;       //trap address in vector mode
+logic [`XLEN-1 :0] direct_addr, vector_addr;
+logic [`XLEN-1 :0] intrr_addr, expn_addr;       //trap address in vector mode
 logic pending_exception;
 
 //flush signals
@@ -157,7 +156,7 @@ always_comb
       `CSRRS:      op_result = o_csr_unit_csr_rdata | i_csr_unit_src;
       `CSRRC:      op_result = o_csr_unit_csr_rdata & (~i_csr_unit_src);
 
-      default:     op_result = 64'hx; 
+      default:     op_result = 64'h0; 
 
     endcase
 
@@ -165,7 +164,7 @@ always_comb
 
 
 /************************output assignment******************************/
-always_ff @(posedge i_csr_unit_clk or negedge i_csr_unit_rst_n)
+always_comb
 begin: output_assignment_proc
 
  if(!i_csr_unit_rst_n)
@@ -177,41 +176,41 @@ begin: output_assignment_proc
      case(i_csr_unit_csr_addr)
       
 
-       `csr_mvendorid:    o_csr_unit_csr_rdata <= 32'b0;
+       `csr_mvendorid:    o_csr_unit_csr_rdata = 32'b0;
 
-       `csr_marchid:      o_csr_unit_csr_rdata <= 64'b0;
+       `csr_marchid:      o_csr_unit_csr_rdata = 64'b0;
 
-       `csr_mhartid:      o_csr_unit_csr_rdata <= 64'b0;
+       `csr_mhartid:      o_csr_unit_csr_rdata = 64'b0;
 
-       `csr_mimpid:       o_csr_unit_csr_rdata <= 64'b0;
+       `csr_mimpid:       o_csr_unit_csr_rdata = 64'b0;
 
-       `csr_misa:         o_csr_unit_csr_rdata <= misa;
+       `csr_misa:         o_csr_unit_csr_rdata = misa;
 
-       `csr_mstatus:      o_csr_unit_csr_rdata <= mstatus;
+       `csr_mstatus:      o_csr_unit_csr_rdata = mstatus;
 
-       `csr_mie:          o_csr_unit_csr_rdata <= mie;
+       `csr_mie:          o_csr_unit_csr_rdata = mie;
 
-       `csr_mip:          o_csr_unit_csr_rdata <= mip;
+       `csr_mip:          o_csr_unit_csr_rdata = mip;
 
-       `csr_mcause:       o_csr_unit_csr_rdata <= mcause;
+       `csr_mcause:       o_csr_unit_csr_rdata = mcause;
 
-       `csr_mtvec:        o_csr_unit_csr_rdata <= mtvec;
+       `csr_mtvec:        o_csr_unit_csr_rdata = mtvec;
 
-       `csr_mepc:         o_csr_unit_csr_rdata <= mepc;
+       `csr_mepc:         o_csr_unit_csr_rdata = mepc;
 
-       `csr_mtval:        o_csr_unit_csr_rdata <= mtval;
+       `csr_mtval:        o_csr_unit_csr_rdata = mtval;
 
-       `csr_mtinst:       o_csr_unit_csr_rdata <= mtinst;
+       `csr_mtinst:       o_csr_unit_csr_rdata = mtinst;
 
-       `csr_mscratch:     o_csr_unit_csr_rdata <= mscratch;
+       `csr_mscratch:     o_csr_unit_csr_rdata = mscratch;
 
-       `csr_time:         o_csr_unit_csr_rdata <= counter;
+       `csr_time:         o_csr_unit_csr_rdata = counter;
 
-       `csr_cycle:        o_csr_unit_csr_rdata <= counter;
+       `csr_cycle:        o_csr_unit_csr_rdata = counter;
 
-       `csr_mtimecmp:     o_csr_unit_csr_rdata <= mtimecmp;
+       `csr_mtimecmp:     o_csr_unit_csr_rdata = mtimecmp;
 
-       default:           o_csr_unit_csr_rdata <= 64'b0;
+       default:           o_csr_unit_csr_rdata = 64'b0;
       
 
      endcase
@@ -264,6 +263,7 @@ begin:trap_setup_proc
                 //external interrupts
                 if (`mstatus_mie & `mie_meie & `mip_meip)
                   begin
+                    mepc = i_csr_unit_pc;
                     current_state <= setting_up;
                     mtval  <= 64'b0;
                     mtinst <= 64'b0;
@@ -276,6 +276,7 @@ begin:trap_setup_proc
                 //timer interrupts
                 else if (`mstatus_mie & `mie_mtie & `mip_mtip)
                   begin
+                    mepc = i_csr_unit_pc;
                     current_state <= setting_up;
                     mtval  <= 64'b0;
                     mtinst <= 64'b0;
@@ -287,6 +288,7 @@ begin:trap_setup_proc
                 //illegal instruction exception
                 else if (i_csr_unit_illegal_instr_id || i_csr_unit_illegal_instr_exe)
                   begin
+                    mepc = i_csr_unit_pc;
                     current_state <= setting_up;
                     mtval  <= 64'b0;
                     mtinst <= i_csr_unit_instr;
@@ -298,6 +300,7 @@ begin:trap_setup_proc
                 //instruction address misaligned exception
                 else if (i_csr_unit_instr_addr_misaligned)
                   begin
+                    mepc = i_csr_unit_pc;
                     current_state <= setting_up;
                     mtval  <= 64'b0;
                     mtinst <= i_csr_unit_instr;
@@ -309,6 +312,7 @@ begin:trap_setup_proc
                 //ecall instruction generates ecall exception
                 else if (i_csr_unit_ecall)
                   begin
+                    mepc = i_csr_unit_pc;
                     current_state <= setting_up;
                     mtval  <= 64'b0;
                     mtinst <= i_csr_unit_instr;
@@ -320,6 +324,7 @@ begin:trap_setup_proc
                 //ebreak instruction generates ebreak exception
                 else if (i_csr_unit_ebreak)
                   begin
+                    mepc = i_csr_unit_pc;
                     current_state <= setting_up;
                     mtval  <= 64'b0;
                     mtinst <= i_csr_unit_instr;
@@ -330,6 +335,7 @@ begin:trap_setup_proc
 
                 else if (i_csr_unit_sw_access_fault)
                   begin
+                    mepc = i_csr_unit_pc;
                     current_state <= setting_up;
                     mtval  <= i_csr_unit_fault_addr;
                     mtinst <= i_csr_unit_instr;
@@ -340,6 +346,7 @@ begin:trap_setup_proc
 
                 else if (i_csr_unit_lw_access_fault)
                   begin
+                    mepc = i_csr_unit_pc;
                     current_state <= setting_up;
                     mtval  <= i_csr_unit_fault_addr;
                     mtinst <= i_csr_unit_instr;
@@ -444,7 +451,6 @@ if (!i_csr_unit_rst_n)
         case (current_state)
           setting_up:
             begin
-                 mepc <= i_csr_unit_pc;
                 `mstatus_mpie <= `mstatus_mie;
                 `mstatus_mie <= 1'b0;
             end
@@ -502,21 +508,21 @@ end
 
 //interrupt handler address
 assign o_csr_unit_irq_handler = mtvec[0]? vector_addr : direct_addr;
-assign direct_addr = mtvec[31:0];
-assign vector_addr = mcause[63]? vector_addr : expn_addr;
-assign expn_addr = {mtvec[31:1],1'b0};
-assign intrr_addr = {mtvec[31:1],1'b0} + (mcause << 2);
+assign direct_addr = mtvec;
+assign vector_addr = mcause[63]? intrr_addr : expn_addr;
+assign expn_addr = {mtvec[63:1],1'b0};
+assign intrr_addr = {mtvec[63:1],1'b0} + (mcause << 2);
 
 //selector signals
-assign o_csr_unit_addr_ctrl = i_csr_unit_mret_id;
-assign o_csr_unit_mux1 = ((current_state == setting_up) | i_csr_unit_mret_id);
+assign o_csr_unit_addr_ctrl = i_csr_unit_mret_wb;
+assign o_csr_unit_mux1 = ((current_state == setting_up) | i_csr_unit_mret_wb);
 
 
 //flush signals
-assign csr_flush_mem = i_csr_unit_lw_access_fault | i_csr_unit_sw_access_fault | (`mstatus_mie & i_csr_unit_mem_wen);
+assign csr_flush_mem = i_csr_unit_lw_access_fault | i_csr_unit_sw_access_fault | (`mstatus_mie & i_csr_unit_mem_wen) | (i_csr_unit_mret_wb);
 assign csr_flush_exe = csr_flush_mem | i_csr_unit_illegal_instr_exe | i_csr_unit_instr_addr_misaligned | (`mstatus_mie);
 assign csr_flush_id = csr_flush_exe | pending_exception | (`mstatus_mie);
-assign csr_flush_if =  (current_state == setting_up) | (i_csr_unit_mret_id) | pending_exception | (`mstatus_mie);
+assign csr_flush_if =  (current_state == setting_up) | pending_exception | (`mstatus_mie) | (i_csr_unit_mret_wb);
 
 
 assign o_csr_unit_mem_flush = csr_flush_mem;

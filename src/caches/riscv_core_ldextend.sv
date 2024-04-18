@@ -11,7 +11,7 @@ module riscv_core_ldextend
 
 always_comb
   begin: ldextend_proc
-    if (i_ldextend_su_extend) 
+    if (!i_ldextend_su_extend) 
       begin
         case (i_ldextend_r_w_size)
           2'b00:   o_ldextend_rdata = {{56{i_ldextend_rdata[7]}},  i_ldextend_rdata[7:0]};

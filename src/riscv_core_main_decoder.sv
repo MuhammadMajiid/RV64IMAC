@@ -113,7 +113,7 @@ case (i_main_decoder_opcode)
 
 
    7'b0101111:  begin // A extension 
-                     control_signals = 18'b1_101_0_1_1_01_0_0_10_0_0_0_0_0;
+                     control_signals = 18'b1_101_0_1_0_01_0_0_10_0_0_0_0_0;
 
                      if (funct5[4:3] == 2'b11)
                      begin
@@ -268,12 +268,8 @@ o_main_decoder_read = 0;
 case (i_main_decoder_opcode)
 
     7'b0000011: o_main_decoder_read = 1;
-    7'b0110111: o_main_decoder_read = 1;
-    7'b0101111: begin
-        o_main_decoder_read = 1;
-        if(funct5 == 5'b00011)
-        o_main_decoder_read = 0;
-    end
+    7'b0110111: o_main_decoder_read = 0;
+    7'b0101111: o_main_decoder_read = 0;
 
     default: o_main_decoder_read = 0;
 endcase
