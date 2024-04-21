@@ -18,7 +18,7 @@ assign o_csr_control_csr_wen = ((i_csr_control_instr[6:0]==7'b1110011));
 
 always_comb begin : illegal_csr
 
-if(i_csr_control_instr[14:12] == 3'b000 && i_csr_control_instr[6:0] == 6'h73)
+if(i_csr_control_instr[14:12] == 3'b000 && i_csr_control_instr[6:0] == 7'h73)
 begin
     if((i_csr_control_instr==32'h30200073) || (i_csr_control_instr==32'h00000073) || (i_csr_control_instr==32'h00100073) )
     o_csr_illegal = 0;
