@@ -7,6 +7,7 @@ module riscv_core_main_decoder_top (
     output logic  o_csr_control_ecall,
     output logic  o_csr_control_ebreak,
     output logic  o_csr_control_mret,
+    output logic  o_csr_control_sret,
     output logic  o_csr_control_csr_wen,
 
     // Main Decoder Outputs //
@@ -85,6 +86,7 @@ module riscv_core_main_decoder_top (
         .i_csr_control_instr(i_instr)
         ,.o_csr_control_csr_wen(o_csr_control_csr_wen)
         ,.o_csr_control_mret(o_csr_control_mret)
+        ,.o_csr_control_sret(o_csr_control_sret)
         ,.o_csr_control_ecall(o_csr_control_ecall)
         ,.o_csr_control_ebreak(o_csr_control_ebreak)
         ,.o_csr_illegal(o_csr_illegal)
