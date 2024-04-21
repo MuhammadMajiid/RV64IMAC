@@ -890,6 +890,8 @@ end
  /*********************************switching between modes********************************/
  always_comb  
    begin
+    current_mode = `mstatus_mpp;
+    
     if (i_csr_unit_mret_wb)
       current_mode = `mstatus_mpp;
 
