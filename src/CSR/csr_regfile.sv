@@ -90,7 +90,7 @@
 `define CSRRS                  2'h2
 `define CSRRC                  2'h3
 
-module riscv_core_csr_regfile(
+module riscv_core_csr_unit(
 
     input  logic                    i_csr_unit_clk,
     input  logic                    i_csr_unit_rst_n,
@@ -742,9 +742,14 @@ if (!i_csr_unit_rst_n)
     mstatus[12:11] <= `m_mode;              //recently modified
     sstatus        <= 64'b0;
     mie            <= 64'b0;
+    medeleg        <= 64'b0;
+    mideleg        <= 64'b0;
     sie            <= 64'b0;
     mtvec          <= 64'b0;
     mepc           <= 64'b0;
+    scause         <= 64'b0;
+    stval          <= 64'b0;
+    satp           <= 64'b0;
     sepc           <= 64'b0;
     stvec          <= 64'b0;
     mscratch       <= 64'b0;
@@ -807,6 +812,16 @@ if (!i_csr_unit_rst_n)
                  begin
                     mscratch <= op_result;
                  end
+
+              `csr_medeleg:
+                begin
+                  medeleg <= op_result;
+                end
+
+              `csr_mideleg:
+                begin
+                  mideleg <= op_result;
+                end
 
               `csr_mtimecmp:
                  begin
@@ -969,7 +984,7 @@ assign o_csr_unit_mux1 = ((current_state == setting_up) | i_csr_unit_mret_wb | i
 assign csr_flush_mem = i_csr_unit_lw_access_fault | i_csr_unit_sw_access_fault | ((`mstatus_mie | `mstatus_sie) & i_csr_unit_mem_wen) | (i_csr_unit_mret_wb | i_csr_unit_sret);
 assign csr_flush_exe = csr_flush_mem | i_csr_unit_illegal_instr_exe | i_csr_unit_instr_addr_misaligned | (`mstatus_mie | `mstatus_sie);
 assign csr_flush_id  = csr_flush_exe | pending_exception | (`mstatus_mie | `mstatus_sie);
-assign csr_flush_if  = pending_exception | (`mstatus_mie) | (`mstatus_sie) | (i_csr_unit_mret_wb | i_csr_unit_sret);
+assign csr_flush_if  = pending_exception |(current_state == setting_up) | (`mstatus_mie) | (`mstatus_sie) | (i_csr_unit_mret_wb | i_csr_unit_sret);
 
 
 assign o_csr_unit_mem_flush = csr_flush_mem;
