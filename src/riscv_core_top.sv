@@ -152,6 +152,7 @@ logic [1:0]  csr_op_id;
 logic        ecall_id;
 logic        ebreak_id;
 logic        mret_id;
+logic        sret_id;
 logic        illegal_input_to_csr;
 logic        csr_wen_id;
 
@@ -161,6 +162,7 @@ logic [31:0] instr_ex;
 logic [1:0]  csr_op_ex;
 logic [63:0] csr_src_ex;
 logic        mret_ex;
+logic        sret_ex;
 logic        instr_addr_miss_ex;
 logic        csr_wen_ex;
 
@@ -168,6 +170,7 @@ logic        csr_wen_ex;
 logic [1:0]  csr_op_mem;
 logic [31:0] instr_mem;
 logic        mret_mem;
+logic        sret_mem;
 logic [63:0] csr_src_mem;
 logic [63:0] pc_mem;
 logic        csr_wen_mem;
@@ -176,6 +179,7 @@ logic        csr_wen_mem;
 logic [1:0]  csr_op_wb;
 logic [31:0] instr_wb;
 logic        mret_wb;
+logic        sret_wb;
 logic [63:0] csr_src_wb;
 logic        trap_cntrl_wb;
 logic        pc_cntrl_wb;
@@ -388,6 +392,7 @@ u_riscv_core_main_decoder
   ,.o_csr_control_ecall(ecall_id)
   ,.o_csr_control_ebreak(ebreak_id)
   ,.o_csr_control_mret(mret_id)
+  ,.o_csr_control_sret(sret_id)
   ,.o_csr_control_csr_wen(csr_wen_id)
     // Main Decoder Outputs //
   ,.o_main_decoder_imsrc(immsrc_id)
@@ -765,6 +770,20 @@ u_riscv_core_pipe_mret_id_ex
   ,.i_pipe_en_n  (hu_stall_ex)
   ,.i_pipe_in    (mret_id)
   ,.o_pipe_out   (mret_ex)
+);
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_sret_id_ex
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_ex)
+  ,.i_pipe_en_n  (hu_stall_ex)
+  ,.i_pipe_in    (sret_id)
+  ,.o_pipe_out   (sret_ex)
 );
 
 riscv_core_pipe 
@@ -1301,6 +1320,19 @@ u_riscv_core_pipe_mret_ex_mem
   ,.i_pipe_in    (mret_ex)
   ,.o_pipe_out   (mret_mem)
 );
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
+u_riscv_core_pipe_sret_ex_mem
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_mem)
+  ,.i_pipe_en_n  (hu_stall_mem)
+  ,.i_pipe_in    (sret_ex)
+  ,.o_pipe_out   (sret_mem)
+);
 
 
 riscv_core_pipe 
@@ -1612,6 +1644,20 @@ riscv_core_pipe
 #(
   .W_PIPE_BUS (1)
 )
+u_riscv_core_pipe_sret_mem_wb
+(
+  .i_pipe_clk    (i_riscv_core_clk)
+  ,.i_pipe_rst_n (i_riscv_core_rst_n)
+  ,.i_pipe_clr   (hu_flush_wb)
+  ,.i_pipe_en_n  (hu_stall_wb)
+  ,.i_pipe_in    (sret_mem)
+  ,.o_pipe_out   (sret_wb)
+);
+
+riscv_core_pipe 
+#(
+  .W_PIPE_BUS (1)
+)
 u_riscv_core_pipe_csr_wen_mem_wb
 (
   .i_pipe_clk    (i_riscv_core_clk)
@@ -1662,13 +1708,14 @@ u_riscv_core_csr_unit
   ,.o_csr_unit_csr_rdata(csr_rdata_wb)
     //exception handling signals
   ,.o_csr_unit_irq_handler(trap_addr_if)
-  ,.o_csr_unit_mepc(mepc_if)
+  ,.o_csr_unit_rtrn_addr(mepc_if)
   ,.o_csr_unit_addr_ctrl(trap_cntrl_wb)
   ,.o_csr_unit_mux1(pc_cntrl_wb)
     //machine mode instructions
   ,.i_csr_unit_mret_wb(mret_wb)
   ,.i_csr_unit_ecall(ecall_id)
   ,.i_csr_unit_ebreak(ebreak_id)
+  ,.i_csr_unit_sret(sret_wb)
     //exception signals
   ,.i_csr_unit_illegal_instr_id(illegal_input_to_csr)
   ,.i_csr_unit_illegal_instr_exe(1'b0)//still there's some editing here
