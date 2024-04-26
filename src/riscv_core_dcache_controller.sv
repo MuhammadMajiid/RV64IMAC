@@ -479,10 +479,10 @@ assign o_amo_fault   = fault & i_amo;
 always_comb begin : mem_write_strobe_decoder
     o_mem_write_strobe = 8'b0;
     case (i_size)
-        2'b00: o_mem_write_strobe = 8'b0000_0001;
-        2'b01: o_mem_write_strobe = 8'b0000_0011;
-        2'b10: o_mem_write_strobe = 8'b0000_1111;
-        2'b11: o_mem_write_strobe = 8'b1111_1111;
+        2'b00: o_mem_write_strobe = (8'b0000_0001) << i_addr_from_core[`BYTE_OFFSET];
+        2'b01: o_mem_write_strobe = (8'b0000_0011) << i_addr_from_core[`BYTE_OFFSET];
+        2'b10: o_mem_write_strobe = (8'b0000_1111) << i_addr_from_core[`BYTE_OFFSET];
+        2'b11: o_mem_write_strobe = (8'b1111_1111) << i_addr_from_core[`BYTE_OFFSET];
         default: o_mem_write_strobe = 8'b0;
     endcase
 end
