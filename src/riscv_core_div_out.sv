@@ -3,8 +3,10 @@ module riscv_core_div_out
   parameter XLEN = 64
 )
 (
-  input  logic [XLEN-1:0] i_div_out_srcA,
-  input  logic [XLEN-1:0] i_div_out_srcB,
+  input  logic            i_div_out_srcA_Dsign,
+  input  logic            i_div_out_srcB_Dsign,
+  input  logic            i_div_out_srcA_Wsign,
+  input  logic            i_div_out_srcB_Wsign,
   input  logic [1:0]      i_div_out_control,
   input  logic            i_div_out_isword,
   input  logic [XLEN-1:0] i_div_out_quotient,
@@ -32,8 +34,8 @@ localparam [1:0] REMW   = 2'b10;
 localparam [1:0] REMUW  = 2'b11;       
 
 
-assign srcA_srcB_sign = {i_div_out_srcA[XLEN-1], i_div_out_srcB[XLEN-1]};
-assign srcA_srcB_word_sign = {i_div_out_srcA[XLEN/2-1], i_div_out_srcB[XLEN/2-1]};
+assign srcA_srcB_sign = {i_div_out_srcA_Dsign, i_div_out_srcB_Dsign};
+assign srcA_srcB_word_sign = {i_div_out_srcA_Wsign, i_div_out_srcB_Wsign};
 
 assign quotient = i_div_out_quotient;
 assign comp_quotient = ~i_div_out_quotient + 1;

@@ -3,8 +3,10 @@ module riscv_core_mul_out
   parameter XLEN = 64
 )
 (
-  input  logic [XLEN-1:0]   i_mul_out_srcA,
-  input  logic [XLEN-1:0]   i_mul_out_srcB,
+  input  logic              i_mul_out_srcA_Dsign,
+  input  logic              i_mul_out_srcB_Dsign,
+  input  logic              i_mul_out_srcA_Wsign,
+  input  logic              i_mul_out_srcB_Wsign,
   input  logic [1:0]        i_mul_out_control,
   input  logic              i_mul_out_isword,
   input  logic [2*XLEN-1:0] i_mul_out_product,
@@ -23,8 +25,8 @@ localparam [1:0] MULHSU = 2'b10;
 localparam [1:0] MULHU  = 2'b11;        
 localparam [1:0] MULW   = 2'b00;
 
-assign srcA_srcB_sign = {i_mul_out_srcA[XLEN-1], i_mul_out_srcB[XLEN-1]};
-assign srcA_srcB_word_sign = {i_mul_out_srcA[XLEN/2-1], i_mul_out_srcB[XLEN/2-1]};
+assign srcA_srcB_sign = {i_mul_out_srcA_Dsign, i_mul_out_srcB_Dsign};
+assign srcA_srcB_word_sign = {i_mul_out_srcA_Wsign, i_mul_out_srcB_Wsign};
 
 assign product = i_mul_out_product;
 assign comp_product = ~i_mul_out_product + 1;

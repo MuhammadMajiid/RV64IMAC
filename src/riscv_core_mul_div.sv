@@ -5,7 +5,7 @@ module riscv_core_mul_div
 (
   input   logic [XLEN-1:0] i_mul_div_srcA,
   input   logic [XLEN-1:0] i_mul_div_srcB,
-  input   logic [3:0]      i_mul_div_control,
+  input   logic [2:0]      i_mul_div_control,
   input   logic            i_mul_div_en,
   input   logic            i_mul_div_isword,
   input   logic            i_mul_div_clk,
@@ -103,8 +103,10 @@ riscv_core_mul_out
 )
 u_riscv_core_mul_out
 (
-  .i_mul_out_srcA(i_mul_div_srcA),
-  .i_mul_out_srcB(i_mul_div_srcB),
+  .i_mul_out_srcA_Dsign(i_mul_div_srcA[XLEN-1]),
+  .i_mul_out_srcB_Dsign(i_mul_div_srcB[XLEN-1]),
+  .i_mul_out_srcA_Wsign(i_mul_div_srcA[XLEN/2-1]),
+  .i_mul_out_srcB_Wsign(i_mul_div_srcB[XLEN/2-1]),
   .i_mul_out_control(i_mul_div_control[1:0]),
   .i_mul_out_isword(i_mul_div_isword),
   .i_mul_out_product(product),
@@ -149,8 +151,10 @@ riscv_core_div_out
 )
 u_riscv_core_div_out
 (
-  .i_div_out_srcA(i_mul_div_srcA),
-  .i_div_out_srcB(i_mul_div_srcB),
+  .i_div_out_srcA_Dsign(i_mul_div_srcA[XLEN-1]),
+  .i_div_out_srcB_Dsign(i_mul_div_srcB[XLEN-1]),
+  .i_div_out_srcA_Wsign(i_mul_div_srcA[XLEN/2-1]),
+  .i_div_out_srcB_Wsign(i_mul_div_srcB[XLEN/2-1]),
   .i_div_out_control(i_mul_div_control[1:0]),
   .i_div_out_isword(i_mul_div_isword),
   .i_div_out_quotient(quotient),
