@@ -23,7 +23,6 @@ module riscv_core_top
     wire o_riscv_core_icache_raddr_valid;
     wire i_riscv_core_icache_rready;
     wire [255:0] i_riscv_core_icache_rdata;
-    wire o_mem_write_done;
 
 riscv_core_top_2
 u_riscv_core_top_2 
@@ -69,22 +68,15 @@ u_main_mem_data
     ,.i_write_strobe(o_riscv_core_dcache_wstrb)
 );
 
-data_mem_top
-u_main_mem_inst
+instr_main_mem
+u_instr_main_mem
 (
     .i_clk(i_riscv_core_clk)
-    ,.i_rst_n(i_riscv_core_rst_n)
     // Interface with READ CHANNEL //
     ,.i_mem_read_address(o_riscv_core_icache_raddr_axi)
     ,.i_mem_read_req(o_riscv_core_icache_raddr_valid)
     ,.o_mem_read_done(i_riscv_core_icache_rready)
     ,.o_cache_line(i_riscv_core_icache_rdata)
-    // Interface with WRITE CHANNEL //
-    ,.o_mem_write_done(o_mem_write_done)
-    ,.i_mem_write_valid(1'b0)
-    ,.i_mem_write_data(64'b0)
-    ,.i_mem_write_address(64'b0)
-    ,.i_write_strobe(8'b0)
 );
 
 
