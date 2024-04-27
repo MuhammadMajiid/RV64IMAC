@@ -24,7 +24,7 @@ initial begin
     #1;
         fd=$fopen("ls.hex","r");                        //// intialize instruction memory
         for(int i =0;i<35;i++)                      //////enter the number of lines
-            rv=$fscanf(fd,"%h",{c1.u_instr_main_mem.MEM[i]});
+            rv=$fscanf(fd,"%h",{c1.u_main_mem_data.u_main_mem.MEM[i]});
 
     for(int i =0 ; i<REGS ; i++) begin                                           //intialize regfile
         c1.u_riscv_core_top_2.u_riscv_core_rf.rf[i]=0;

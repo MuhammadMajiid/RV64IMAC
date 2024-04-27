@@ -140,7 +140,7 @@ module riscv_core_csr_unit(
 
 
 //machine mode CSR registers
-logic [`XLEN-1:0] mstatus;
+(*keep = "yes"*) logic [`XLEN-1:0] mstatus;
 logic [`XLEN-1:0] misa;
 logic [`XLEN-1:0] mie;
 logic [`XLEN-1:0] mip;
@@ -156,7 +156,7 @@ logic [`XLEN-1:0] mideleg;
 
 
 //supervisor level CSR registers
-logic [`XLEN-1:0] sstatus;
+(*keep = "true"*) logic [`XLEN-1:0] sstatus;
 logic [`XLEN-1:0] sip;
 logic [`XLEN-1:0] sie;
 logic [`XLEN-1:0] stvec;
@@ -296,8 +296,6 @@ begin: output_assignment_proc
 
        `csr_stimecmp:     o_csr_unit_csr_rdata = stimecmp;
 
-       `csr_satp:         o_csr_unit_csr_rdata = 64'b0;        //no translation
-
        default:           o_csr_unit_csr_rdata = 64'b0;
       
 
@@ -363,11 +361,6 @@ begin:trap_setup_proc
                     else if (i_csr_unit_csr_addr == `csr_mcause)
                       mcause <= op_result;
 
-                    else if (i_csr_unit_csr_addr == `csr_mepc)
-                      mepc <= op_result;
-
-                    else if (i_csr_unit_csr_addr == `csr_sepc)
-                      sepc <= op_result;
 
                     else if (i_csr_unit_csr_addr == `csr_mtval)
                       mtval <= op_result;
@@ -947,6 +940,9 @@ end
 
     else if (i_csr_unit_sret)
      o_csr_unit_rtrn_addr = sepc;
+     
+    else
+     o_csr_unit_rtrn_addr = stvec;
    end
 
 

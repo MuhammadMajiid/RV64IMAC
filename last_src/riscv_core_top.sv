@@ -21,7 +21,12 @@ module riscv_core_top_2
   output logic [63:0] o_addr_from_control_to_axi,
   output logic o_mem_req,
   input  logic i_mem_done,
-  input  logic [255:0] i_block_from_axi_i_cache
+  input  logic [255:0] i_block_from_axi_i_cache,
+  //UART
+  input  logic uart_ready,
+  output logic [7:0] uart_out_data,
+  output logic uart_valid
+
 );
 //-------------Local Parameters-------------//
 
@@ -141,7 +146,9 @@ logic        store_fault;
 logic        amo_fault;
 logic        d_chache_stall;
 logic        mem_cahce_read;
-
+logic        d_uart_stall;
+logic        mem_stall;
+logic        mem_wen;
 //-------------WB Intermediate Signals-------------//
 logic [63:0] result_wb;
 
@@ -328,9 +335,6 @@ u_riscv_core_i_cache_top
     ,.i_mem_done(i_mem_done)
     ,.i_block_from_axi(i_block_from_axi_i_cache)
 );
-
-
-
 
 
 riscv_core_compressed_decoder
@@ -1444,7 +1448,20 @@ u_riscv_core_pipe_csr_wen_ex_mem
 //----------------------------------//
 //-------------MEM Stage------------//
 //----------------------------------//
+uartTrans
+u_uartTrans
+(
+  .i_wen(ex_mem_pipe_memwrite)
+  ,.ready(uart_ready)
+  ,.i_data(ex_mem_pipe_wd)
+  ,.address(ex_mem_pipe_alu_result)
+  ,.uart_out_data(uart_out_data)
+  ,.valid(uart_valid)
+  ,.o_wen(mem_wen)
+  ,.stall(d_uart_stall)
+);
 
+assign mem_stall = d_chache_stall || d_uart_stall;
 
 riscv_core_dcache_top#(
     .BLOCK_OFFSET(2)
@@ -1462,13 +1479,13 @@ u_riscv_core_dcache_top
     ,.i_data_from_core(ex_mem_pipe_wd)
     ,.i_addr_from_core(ex_mem_pipe_alu_result)
     ,.i_read(mem_cahce_read)
-    ,.i_write(ex_mem_pipe_memwrite)
+    ,.i_write(mem_wen)
     ,.i_size(ex_mem_pipe_size)
     ,.i_amo_op(mem_main_decoder_amo_op)
     ,.i_amo(mem_main_decoder_amo)
     ,.i_lr(mem_main_decoder_lr)
     ,.i_sc(mem_main_decoder_sc)
-    ,.o_stall(d_chache_stall)
+    ,.o_stall(mem_stall)
     ,.o_data_to_core(read_data_mem)
     ,.o_store_fault(store_fault)
     ,.o_load_fault(load_fault)
@@ -1702,7 +1719,7 @@ u_riscv_core_csr_unit
   .i_csr_unit_clk(i_riscv_core_clk)
   ,.i_csr_unit_rst_n(i_riscv_core_rst_n)
   ,.i_csr_unit_pc(csr_pc)
-  ,.i_csr_unit_mem_wen(ex_mem_pipe_memwrite)
+  ,.i_csr_unit_mem_wen(mem_wen)
   ,.i_csr_unit_fault_addr(ex_mem_pipe_alu_result)
   ,.i_csr_unit_instr(csr_instr)
     //external interrupts
