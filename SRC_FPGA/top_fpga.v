@@ -1,5 +1,5 @@
 /*
-    Authors : Aly Ruby - Mohamed Maged
+    Authors : Mohamed Maged & Ali Elruby & Ali Khaled
 */
 /*
     Terminal Configuration:
@@ -15,7 +15,8 @@ module riscv_core_top#(
     parameter CACHE_LINE_WIDTH = 256,
     parameter DWIDTH = 4'd8,
     parameter CLK_RATE  = 100000000, // board internal clock (def == 100MHz)
-    parameter BAUD_RATE = 115200
+    parameter BAUD_RATE = 115200,
+    parameter block_WIDTH = 8
 )(
     // Global inputs
     input  wire i_riscv_core_clk,
@@ -91,14 +92,41 @@ u_riscv_core_top_2
     ,.uart_valid(core_txvalid)
 );
 
-uart_txrx #(DWIDTH,CLK_RATE,BAUD_RATE) uart (
-    .uart_clk(i_riscv_core_clk)
-    ,.uart_rst_n(i_riscv_core_rst_n)
-    ,.core_txdata(core_txdata)
-    ,.core_txvalid(core_txvalid)
-    ,.ready_to_core(ready_to_core)
-    ,.o_uart_tx(o_riscv_core_uart_tx)
-    ,.o_uart_tx_busy(o_riscv_core_uart_tx_busy)
+uart_ssh#(
+    .block_WIDTH(block_WIDTH),
+    .CLK_RATE(CLK_RATE),
+    .BAUD_RATE(BAUD_RATE)
+)                                                                                                           
+u_uart_ssh                                                                                                                           
+(                                                                                                               
+    .clk(i_riscv_core_clk)                                                                                  
+    ,.rst(i_riscv_core_rst_n)                                                                                                                                                              
+    ,.tx_data(core_txdata)                                   
+    ,.tx_valid(core_txvalid)                                    
+    ,.tx_ready(ready_to_core)
+    /*
+     * AXI output
+     */
+    ,.rx_data()
+    ,.rx_valid()
+    ,.rx_ready(1'b1)
+    /*
+     * UART interface
+     */
+    ,.rxd(1'b1)
+    ,.txd(o_riscv_core_uart_tx)
+    /*
+     * Status
+     */
+    ,.tx_busy(o_riscv_core_uart_tx_busy)
+    ,.rx_busy()
+    ,.rx_overrun_error()
+    ,.rx_frame_error()
+    /*
+     * Configuration
+     */
+    //,.prescale(16'h0003)
+
 );
 
 mem_translator
@@ -152,5 +180,29 @@ u_main_mem_data
     ,.i_write_strobe(o_write_strobe)
 );
 
+/*
+data_mem_top
+u_instr_main_mem
+(
+    .i_clk(i_riscv_core_clk)
+    ,.i_rst_n(i_riscv_core_rst_n)
+    // Interface with READ CHANNEL //
+    ,.i_mem_read_address(o_riscv_core_icache_raddr_axi)
+    ,.i_mem_read_req(o_riscv_core_icache_raddr_valid)
+    ,.o_mem_read_done(i_riscv_core_icache_rready)
+    ,.o_cache_line(i_riscv_core_icache_rdata)
+    // Interface with WRITE CHANNEL //
+    ,.o_mem_write_done(o_mem_write_done_dummy)
+    ,.i_mem_write_valid(i_mem_write_valid_dummy)
+    ,.i_mem_write_data(i_mem_write_data_dummy)
+    ,.i_mem_write_address(i_mem_write_address_dummy)
+    ,.i_write_strobe(i_write_strobe_dummy)
+);
+
+assign i_mem_write_valid_dummy    = 1'b0 ;
+assign i_mem_write_data_dummy     = 64'b0;
+assign i_mem_write_address_dummy  = 64'b0;
+assign i_write_strobe_dummy       = 8'b0 ;
+*/
 
 endmodule

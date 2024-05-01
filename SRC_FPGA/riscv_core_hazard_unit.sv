@@ -3,7 +3,6 @@
 */
 module riscv_core_hazard_unit
 (
-
     // RV64I Detection inputs
     input logic [4:0] i_hazard_unit_rs1_id,
     input logic [4:0] i_hazard_unit_rs2_id,
@@ -26,7 +25,13 @@ module riscv_core_hazard_unit
     // Caches requests
     input logic i_hazard_unit_dcache_stall,
     input logic i_hazard_unit_icache_stall,
-
+    
+    //CSR inputs
+    input  logic i_hazard_unit_csr_flush_id,
+    input  logic i_hazard_unit_csr_flush_ex,
+    input  logic i_hazard_unit_csr_flush_mem,
+    input  logic i_hazard_unit_csr_flush_wb,
+    
     // UART Stall
     input logic i_hazard_unit_uart_stall,
 
@@ -45,13 +50,7 @@ module riscv_core_hazard_unit
     output logic o_hazard_unit_flush_id,
     output logic o_hazard_unit_flush_ex,
     output logic o_hazard_unit_flush_mem,
-    output logic o_hazard_unit_flush_wb,
-
-    //CSR inputs
-    input  logic i_hazard_unit_csr_flush_id,
-    input  logic i_hazard_unit_csr_flush_ex,
-    input  logic i_hazard_unit_csr_flush_mem,
-    input  logic i_hazard_unit_csr_flush_wb
+    output logic o_hazard_unit_flush_wb
 );
 
 // Internals
@@ -103,11 +102,11 @@ begin : stall_proc
     mstall_detection        = (i_hazard_unit_mbusy && !i_hazard_unit_mdone);
     icache_stall_detection  = i_hazard_unit_icache_stall;
     dcache_stall_detection  = i_hazard_unit_dcache_stall;
-    o_hazard_unit_stall_if  = lwstall_detection || mstall_detection || icache_stall_detection || dcache_stall_detection|| i_hazard_unit_uart_stall;
-    o_hazard_unit_stall_id  = lwstall_detection || mstall_detection || dcache_stall_detection || icache_stall_detection|| i_hazard_unit_uart_stall;
-    o_hazard_unit_stall_ex  = mstall_detection  || dcache_stall_detection || icache_stall_detection|| i_hazard_unit_uart_stall;
-    o_hazard_unit_stall_mem = mstall_detection  || dcache_stall_detection || icache_stall_detection|| i_hazard_unit_uart_stall;
-    o_hazard_unit_stall_wb  = mstall_detection  || dcache_stall_detection || icache_stall_detection|| i_hazard_unit_uart_stall;
+    o_hazard_unit_stall_if  = lwstall_detection || mstall_detection || icache_stall_detection || dcache_stall_detection || i_hazard_unit_uart_stall;
+    o_hazard_unit_stall_id  = lwstall_detection || mstall_detection || dcache_stall_detection || icache_stall_detection || i_hazard_unit_uart_stall;
+    o_hazard_unit_stall_ex  = mstall_detection  || dcache_stall_detection || icache_stall_detection || i_hazard_unit_uart_stall;
+    o_hazard_unit_stall_mem = mstall_detection  || dcache_stall_detection || icache_stall_detection || i_hazard_unit_uart_stall;
+    o_hazard_unit_stall_wb  = mstall_detection  || dcache_stall_detection || icache_stall_detection || i_hazard_unit_uart_stall;
 end
 
 //---------------------------------Flush---------------------------------\\

@@ -1,5 +1,7 @@
-// Parametrized module for pipe stages
-
+/*
+    Author : Mohamed Maged
+    Purpose: Parametrized module for pipe stages 
+*/
 module riscv_core_pipe 
 #(
     parameter W_PIPE_BUS = 32

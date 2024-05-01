@@ -1,5 +1,5 @@
 module riscv_core_compressed_decoder (
-    input logic  [31:0] i_compressed_decoder_instr,
+    input  logic [31:0] i_compressed_decoder_instr,
     output logic [31:0] o_compressed_decoder_instr,
     output logic        o_compressed_decoder_is_compressed,
     output logic        o_compressed_decoder_illegal_instr
@@ -483,10 +483,11 @@ always_comb begin
         end
     endcase
     
+    // ALL Zeros instruction is dealt with as NOP
     if (i_compressed_decoder_instr == 32'b0) begin
-        o_compressed_decoder_instr = i_compressed_decoder_instr;
         o_compressed_decoder_is_compressed = 1'b0;
         o_compressed_decoder_illegal_instr = 1'b0;
+        o_compressed_decoder_instr         = i_compressed_decoder_instr;
     end
 
     // Illegal instruction handling
