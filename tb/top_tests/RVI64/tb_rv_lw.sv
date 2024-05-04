@@ -1,5 +1,4 @@
 /*
-Authors: Aly_Ruby       Mohamed_Morsi
 Date:20/12/2023
 test bench for RVI64 core with basic instructions to test the functionality of each instruction
 first we initialze the data memory with x means each location will have it's address as a data value
