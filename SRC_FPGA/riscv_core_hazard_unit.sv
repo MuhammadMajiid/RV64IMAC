@@ -1,6 +1,3 @@
-/*
-    Author : Mohamed Maged
-*/
 module riscv_core_hazard_unit
 (
     // RV64I Detection inputs

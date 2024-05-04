@@ -1,7 +1,4 @@
 /*
-    Authors : Mohamed Maged & Ali Elruby & Ali Khaled
-*/
-/*
     Terminal Configuration:
     - 8 bit data width
     - 2 stop bits

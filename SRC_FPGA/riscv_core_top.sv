@@ -1,6 +1,3 @@
-/*
-    Authors : Mohamed Maged & Ali Elruby
-*/
 module riscv_core_top_2
 (
   // Global inputs
