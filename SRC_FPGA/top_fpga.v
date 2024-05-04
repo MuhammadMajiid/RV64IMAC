@@ -63,6 +63,7 @@ wire [     DATA_WIDTH-1 : 0]  o_mem_write_data;
 wire [     ADDR_WIDTH-1 : 0]  o_mem_write_address;
 wire [                7 : 0]  o_write_strobe;
 
+
 riscv_core_top_2
 u_riscv_core_top_2 
 (
@@ -180,29 +181,6 @@ u_main_mem_data
     ,.i_write_strobe(o_write_strobe)
 );
 
-/*
-data_mem_top
-u_instr_main_mem
-(
-    .i_clk(i_riscv_core_clk)
-    ,.i_rst_n(i_riscv_core_rst_n)
-    // Interface with READ CHANNEL //
-    ,.i_mem_read_address(o_riscv_core_icache_raddr_axi)
-    ,.i_mem_read_req(o_riscv_core_icache_raddr_valid)
-    ,.o_mem_read_done(i_riscv_core_icache_rready)
-    ,.o_cache_line(i_riscv_core_icache_rdata)
-    // Interface with WRITE CHANNEL //
-    ,.o_mem_write_done(o_mem_write_done_dummy)
-    ,.i_mem_write_valid(i_mem_write_valid_dummy)
-    ,.i_mem_write_data(i_mem_write_data_dummy)
-    ,.i_mem_write_address(i_mem_write_address_dummy)
-    ,.i_write_strobe(i_write_strobe_dummy)
-);
 
-assign i_mem_write_valid_dummy    = 1'b0 ;
-assign i_mem_write_data_dummy     = 64'b0;
-assign i_mem_write_address_dummy  = 64'b0;
-assign i_write_strobe_dummy       = 8'b0 ;
-*/
 
 endmodule

@@ -1,7 +1,7 @@
-`define TAG 63:12
-`define INDEX 11:5
-`define BLOCK_OFFSET 4:2
-`define BYTE_OFFSET 1:0
+`define TAGI 63:12
+`define INDEXI 11:5
+`define BLOCK_OFFSETI 4:2
+`define BYTE_OFFSETI 1:0
 
 module riscv_core_icache_memory #(
     parameter BLOCK_OFFSET_WIDTH = 3,
@@ -46,9 +46,9 @@ always @( posedge i_clk , negedge i_rst_n ) begin : FLUSH_WRITE_REPLACEMENT_BLOC
         // BLOCK REPLACEMENT // 
         if (i_wr_en && i_block_replace) begin
             if(!i_offset)
-                INSTR_MEM [  i_addr_from_core[`INDEX]        ] <= i_block_from_axi;
+                INSTR_MEM [  i_addr_from_core[`INDEXI]        ] <= i_block_from_axi;
             else
-                INSTR_MEM [  i_addr_from_core_2[`INDEX]      ] <= i_block_from_axi;
+                INSTR_MEM [  i_addr_from_core_2[`INDEXI]      ] <= i_block_from_axi;
         end
     end    
 end
@@ -57,10 +57,10 @@ always_comb begin : READ_MEMORY_BLOCK
     o_data_to_core = 'b0;
     if (i_rd_en) begin
         // READ WORD
-        o_data_to_core =   {INSTR_MEM [ i_addr_from_core_3[`INDEX] ][ i_addr_from_core_3[`BLOCK_OFFSET] ][ i_addr_from_core_3[`BYTE_OFFSET]] ,
-                            INSTR_MEM [ i_addr_from_core_2[`INDEX] ][ i_addr_from_core_2[`BLOCK_OFFSET] ][ i_addr_from_core_2[`BYTE_OFFSET]] , 
-                            INSTR_MEM [ i_addr_from_core_1[`INDEX] ][ i_addr_from_core_1[`BLOCK_OFFSET] ][ i_addr_from_core_1[`BYTE_OFFSET]] ,
-                            INSTR_MEM [ i_addr_from_core  [`INDEX] ][ i_addr_from_core  [`BLOCK_OFFSET] ][ i_addr_from_core  [`BYTE_OFFSET]]};
+        o_data_to_core =   {INSTR_MEM [ i_addr_from_core_3[`INDEXI] ][ i_addr_from_core_3[`BLOCK_OFFSETI] ][ i_addr_from_core_3[`BYTE_OFFSETI]] ,
+                            INSTR_MEM [ i_addr_from_core_2[`INDEXI] ][ i_addr_from_core_2[`BLOCK_OFFSETI] ][ i_addr_from_core_2[`BYTE_OFFSETI]] , 
+                            INSTR_MEM [ i_addr_from_core_1[`INDEXI] ][ i_addr_from_core_1[`BLOCK_OFFSETI] ][ i_addr_from_core_1[`BYTE_OFFSETI]] ,
+                            INSTR_MEM [ i_addr_from_core  [`INDEXI] ][ i_addr_from_core  [`BLOCK_OFFSETI] ][ i_addr_from_core  [`BYTE_OFFSETI]]};
     end
 end
 endmodule

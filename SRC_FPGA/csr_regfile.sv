@@ -43,30 +43,8 @@
 `define csr_stimecmp      12'h14d      //need to be revised
 
 //supervisor protection and translation register address
-`define csr_satp          12'h180                                   //to be done
+`define csr_satp          12'h180                                   
 
-//bits in mstatus,mie, and mip,sie,sip                         
-`define mstatus_mie       mstatus[3]
-`define mstatus_mpie      mstatus[7]
-`define mstatus_sie       mstatus[1]
-`define mstatus_spie      mstatus[5]
-`define mstatus_mpp       mstatus[12:11]
-`define mstatus_spp       mstatus[8]
-`define mie_meie          mie[11]
-`define mie_seie          mie[9]
-`define mie_stie          mie[5]
-`define mip_meip          mip[11]
-`define mip_seip          mip[9]
-`define mip_stip          mip[5]
-`define mie_mtie          mie[7]
-`define mip_mtip          mip[7]
-`define sstatus_sie       sstatus[1]
-`define sstatus_spie      sstatus[5]
-`define sstatus_spp       sstatus[8]
-`define sie_seie          sie[9]
-`define sie_stie          sie[5]
-`define sip_seip          sip[9]
-`define sip_stip          sip[5]
 
 //exceptions and interrupts
 `define instr_addr_misaligned  63'h0
@@ -140,7 +118,7 @@ module riscv_core_csr_unit(
 
 
 //machine mode CSR registers
-(*keep = "yes"*) logic [`XLEN-1:0] mstatus;
+logic [`XLEN-1:0] mstatus;
 logic [`XLEN-1:0] misa;
 logic [`XLEN-1:0] mie;
 logic [`XLEN-1:0] mip;
@@ -156,7 +134,7 @@ logic [`XLEN-1:0] mideleg;
 
 
 //supervisor level CSR registers
-(*keep = "true"*) logic [`XLEN-1:0] sstatus;
+logic [`XLEN-1:0] sstatus;
 logic [`XLEN-1:0] sip;
 logic [`XLEN-1:0] sie;
 logic [`XLEN-1:0] stvec;
@@ -168,14 +146,12 @@ logic [`XLEN-1:0] sscratch;
 logic [`XLEN-1:0] stimecmp;
 
 
-
-
 //64-bit counter
 logic [`XLEN-1:0] counter;
 
 //intermediate value
 logic [`XLEN-1:0] op_result;    //result of CSR operation
-logic [1:0] current_mode;     //not connected yet
+logic [1:0] current_mode;     
 logic [`XLEN-1:0] tvec;
 logic [`XLEN-1:0] cause;
 
@@ -197,6 +173,27 @@ logic csr_flush_exe;
 logic csr_flush_id;
 logic csr_flush_if;
 
+//bits in mstatus,sstatus,mie,sie
+logic  mstatus_mie;
+logic  mstatus_mpie;
+logic  mstatus_sie;
+logic  mstatus_spie;
+logic [1:0] mstatus_mpp;
+logic mstatus_spp;
+logic sstatus_sie;
+logic sstatus_spie;
+logic sstatus_spp;
+logic mip_meip;
+logic mip_mtip;
+logic ip_seip;
+logic ip_stip;
+logic mie_meie;
+logic mie_seie;
+logic mie_stie;
+logic mie_mtie;
+logic [47:0] mie_reserved, sie_reserved;
+logic sie_seie;
+logic sie_stie;
 
 
 
@@ -207,7 +204,76 @@ assign misa = {
     26'b00000001000001000100000101   //RV-IMAC with machine and supervisor modes
 };
 
+assign mstatus = {
+51'b0,
+mstatus_mpp,
+2'b0,
+mstatus_spp,			
+mstatus_mpie,        
+1'b0,
+mstatus_spie,        
+1'b0,
+mstatus_mie,            
+1'b0,
+mstatus_sie,            
+1'b0
+};
 
+assign sstatus = {
+55'b0,
+sstatus_spp,
+2'b0,
+sstatus_spie,
+3'b0,
+sstatus_sie,
+1'b0
+};
+
+
+assign mip = {
+52'b0,
+mip_meip,
+1'b0,
+ip_seip,
+1'b0,
+mip_mtip,
+1'b0,
+ip_stip,
+5'b0
+};
+
+assign sip = {
+54'b0,
+ip_seip,
+3'b0,
+ip_stip,
+5'b0
+};
+
+assign sie = {
+sie_reserved,
+6'b0,
+sie_seie,
+3'b0,
+sie_stie,
+5'b0
+};
+
+assign mie = {
+mie_reserved,
+4'b0,
+mie_meie,
+1'b0,
+mie_seie,
+1'b0,
+mie_mtie,
+1'b0,
+mie_stie,
+5'b0
+};
+
+
+assign satp = 64'b0;
 
 
 always_comb 
@@ -321,9 +387,9 @@ begin:trap_setup_proc
     if (!i_csr_unit_rst_n)
     begin
         current_state <= idle;
-        mstatus[12:11] <= `m_mode; 
-        mstatus[8] <= 1'b0; 
-        sstatus[8] <= 1'b0;        
+        mstatus_mpp <= `m_mode; 
+        mstatus_spp <= 1'b0; 
+        sstatus_spp <= 1'b0;        
         mcause <= 64'b0;
         mtval  <= 64'b0;
         mtinst <= 64'b0;
@@ -343,19 +409,19 @@ begin:trap_setup_proc
                 if (i_csr_unit_csr_wen)
                   begin
                     if (i_csr_unit_mret_wb)
-                     `mstatus_mpp <= 2'b00;
+                     mstatus_mpp <= 2'b00;
 
                     else if (i_csr_unit_sret)
-                     `sstatus_spp <= 1'b0;
+                     sstatus_spp <= 1'b0;
 
                     else if (i_csr_unit_csr_addr == `csr_mstatus)
                      begin
-                      `mstatus_mpp  <= op_result[12:11];
-                      `mstatus_spp  <= op_result[8];
+                      mstatus_mpp  <= op_result[12:11];
+                      mstatus_spp  <= op_result[8];
                      end
 
                     else if (i_csr_unit_csr_addr == `csr_sstatus)
-                     `sstatus_spp  <= op_result[8];
+                     sstatus_spp  <= op_result[8];
 
 
                     else if (i_csr_unit_csr_addr == `csr_mcause)
@@ -377,7 +443,7 @@ begin:trap_setup_proc
 
                 
                 //external interrupts
-                if (`mstatus_mie & `mie_meie & `mip_meip)
+                if (mstatus_mie & mie_meie & mip_meip)
                   begin
                     mepc = i_csr_unit_pc;
                     current_state <= setting_up;
@@ -386,12 +452,12 @@ begin:trap_setup_proc
                     mcause[63] <= 1'b1;
                     mcause[62:0] <= `m_external_interrupt;
                     o_csr_unit_ack <= 1'b1;
-                    `mstatus_mpp <= current_mode;
+                    mstatus_mpp <= current_mode;
                   end
 
                 
                 //timer interrupts
-                else if (`mstatus_mie & `mie_mtie & `mip_mtip)
+                else if (mstatus_mie & mie_mtie & mip_mtip)
                   begin
                     mepc = i_csr_unit_pc;
                     current_state <= setting_up;
@@ -399,11 +465,11 @@ begin:trap_setup_proc
                     mtinst <= 64'b0;
                     mcause[63] <= 1'b1;
                     mcause[62:0] <= `m_timer_interrupt;
-                    `mstatus_mpp <= current_mode;
+                    mstatus_mpp <= current_mode;
                   end
 
 
-                else if (`mstatus_sie & `mie_seie & `mip_seip)
+                else if (mstatus_sie & mie_seie & ip_seip)
                   begin
                     current_state <= setting_up;
                       case (current_mode)
@@ -415,7 +481,7 @@ begin:trap_setup_proc
                               mcause[63] <= 1'b1;
                               mcause[62:0] <= `s_external_interrupt;
                               o_csr_unit_ack <= 1'b1;
-                              `mstatus_mpp <= `m_mode;
+                              mstatus_mpp <= `m_mode;
                           end
 
                         `s_mode:
@@ -427,8 +493,8 @@ begin:trap_setup_proc
                               scause[63] <= 1'b1;
                               scause[62:0] <= `s_external_interrupt;
                               o_csr_unit_ack <= 1'b1;
-                              `mstatus_spp <= 1'b1;
-                              `sstatus_spp <= 1'b1;
+                              mstatus_spp <= 1'b1;
+                              sstatus_spp <= 1'b1;
                              end
 
                             else
@@ -439,7 +505,7 @@ begin:trap_setup_proc
                               mcause[63] <= 1'b1;
                               mcause[62:0] <= `s_external_interrupt;
                               o_csr_unit_ack <= 1'b1;
-                              `mstatus_mpp <= `s_mode;
+                              mstatus_mpp <= `s_mode;
                              end
                           end
                       endcase
@@ -447,7 +513,7 @@ begin:trap_setup_proc
                   end
 
 
-                else if (`mstatus_sie & `mie_stie & `mip_stip)
+                else if (mstatus_sie & mie_stie & ip_stip)
                   begin
                     current_state <= setting_up;
                       case (current_mode)
@@ -458,7 +524,7 @@ begin:trap_setup_proc
                               mtinst <= 64'b0;
                               mcause[63] <= 1'b1;
                               mcause[62:0] <= `s_timer_interrupt;
-                              `mstatus_mpp <= `m_mode;
+                              mstatus_mpp <= `m_mode;
                           end
 
                         `s_mode:
@@ -469,8 +535,8 @@ begin:trap_setup_proc
                               stval  <= 64'b0;
                               scause[63] <= 1'b1;
                               scause[62:0] <= `s_timer_interrupt;
-                              `mstatus_spp <= 1'b1;
-                              `sstatus_spp <= 1'b1;
+                              mstatus_spp <= 1'b1;
+                              sstatus_spp <= 1'b1;
                              end
 
                             else
@@ -480,7 +546,7 @@ begin:trap_setup_proc
                               mtinst <= 64'b0;
                               mcause[63] <= 1'b1;
                               mcause[62:0] <= `s_timer_interrupt;
-                              `mstatus_mpp <= `s_mode;
+                              mstatus_mpp <= `s_mode;
                              end
                           end
                       endcase
@@ -500,7 +566,7 @@ begin:trap_setup_proc
                               mtinst <= i_csr_unit_instr;
                               mcause[63] <= 1'b0;
                               mcause[62:0] <= `illegal_instr;
-                              `mstatus_mpp <= `m_mode;
+                              mstatus_mpp <= `m_mode;
                           end
 
                         `s_mode:
@@ -511,8 +577,8 @@ begin:trap_setup_proc
                               stval  <= 64'b0;
                               scause[63] <= 1'b0;
                               scause[62:0] <= `illegal_instr;
-                              `mstatus_spp <= 1'b1;
-                              `sstatus_spp <= 1'b1;
+                              mstatus_spp <= 1'b1;
+                              sstatus_spp <= 1'b1;
                              end
 
                             else
@@ -522,7 +588,7 @@ begin:trap_setup_proc
                               mtinst <= i_csr_unit_instr;
                               mcause[63] <= 1'b0;
                               mcause[62:0] <= `illegal_instr;
-                              `mstatus_mpp <= `s_mode;
+                              mstatus_mpp <= `s_mode;
                              end
                           end
                       endcase
@@ -542,7 +608,7 @@ begin:trap_setup_proc
                               mtinst <= i_csr_unit_instr;
                               mcause[63] <= 1'b0;
                               mcause[62:0] <= `instr_addr_misaligned;
-                              `mstatus_mpp <= `m_mode;
+                              mstatus_mpp <= `m_mode;
                           end
 
                         `s_mode:
@@ -553,8 +619,8 @@ begin:trap_setup_proc
                               stval  <= 64'b0;
                               scause[63] <= 1'b0;
                               scause[62:0] <= `instr_addr_misaligned;
-                              `mstatus_spp <= 1'b1;
-                              `sstatus_spp <= 1'b1;
+                              mstatus_spp <= 1'b1;
+                              sstatus_spp <= 1'b1;
                              end
 
                             else
@@ -564,7 +630,7 @@ begin:trap_setup_proc
                               mtinst <= i_csr_unit_instr;
                               mcause[63] <= 1'b0;
                               mcause[62:0] <= `instr_addr_misaligned;
-                              `mstatus_mpp <= `s_mode;
+                              mstatus_mpp <= `s_mode;
                              end
                           end
                       endcase
@@ -582,7 +648,7 @@ begin:trap_setup_proc
                     mtinst <= i_csr_unit_instr;
                     mcause[63] <= 1'b0;
                     mcause[62:0] <= `ecall;
-                    `mstatus_mpp <= `m_mode;
+                    mstatus_mpp <= `m_mode;
                   end
                       
                 
@@ -599,7 +665,7 @@ begin:trap_setup_proc
                               mtinst <= i_csr_unit_instr;
                               mcause[63] <= 1'b0;
                               mcause[62:0] <= `ebreak;
-                              `mstatus_mpp <= `m_mode;
+                              mstatus_mpp <= `m_mode;
                           end
 
                         `s_mode:
@@ -610,8 +676,8 @@ begin:trap_setup_proc
                               stval  <= 64'b0;
                               scause[63] <= 1'b0;
                               scause[62:0] <= `ebreak;
-                              `mstatus_spp <= 1'b1;
-                              `sstatus_spp <= 1'b1;
+                              mstatus_spp <= 1'b1;
+                              sstatus_spp <= 1'b1;
                              end
 
                             else
@@ -621,7 +687,7 @@ begin:trap_setup_proc
                               mtinst <= i_csr_unit_instr;
                               mcause[63] <= 1'b0;
                               mcause[62:0] <= `ebreak;
-                              `mstatus_mpp <= `s_mode;
+                              mstatus_mpp <= `s_mode;
                              end
                           end
                       endcase
@@ -640,7 +706,7 @@ begin:trap_setup_proc
                               mtinst <= i_csr_unit_instr;
                               mcause[63] <= 1'b0;
                               mcause[62:0] <= `sw_access_fault;
-                              `mstatus_mpp <= `m_mode;
+                              mstatus_mpp <= `m_mode;
                           end
 
                         `s_mode:
@@ -651,8 +717,8 @@ begin:trap_setup_proc
                               stval  <= i_csr_unit_fault_addr;
                               scause[63] <= 1'b0;
                               scause[62:0] <= `sw_access_fault;
-                              `mstatus_spp <= 1'b1;
-                              `sstatus_spp <= 1'b1;
+                              mstatus_spp <= 1'b1;
+                              sstatus_spp <= 1'b1;
                              end
 
                             else
@@ -662,7 +728,7 @@ begin:trap_setup_proc
                               mtinst <= i_csr_unit_instr;
                               mcause[63] <= 1'b0;
                               mcause[62:0] <= `sw_access_fault;
-                              `mstatus_mpp <= `s_mode;
+                              mstatus_mpp <= `s_mode;
                              end
                           end
                       endcase
@@ -681,7 +747,7 @@ begin:trap_setup_proc
                               mtinst <= i_csr_unit_instr;
                               mcause[63] <= 1'b0;
                               mcause[62:0] <= `lw_access_fault;
-                              `mstatus_mpp <= `m_mode;
+                              mstatus_mpp <= `m_mode;
                           end
 
                         `s_mode:
@@ -692,8 +758,8 @@ begin:trap_setup_proc
                               stval  <= i_csr_unit_fault_addr;
                               scause[63] <= 1'b0;
                               scause[62:0] <= `lw_access_fault;
-                              `mstatus_spp <= 1'b1;
-                              `sstatus_spp <= 1'b1;
+                              mstatus_spp <= 1'b1;
+                              sstatus_spp <= 1'b1;
                              end
 
                             else
@@ -703,7 +769,7 @@ begin:trap_setup_proc
                               mtinst <= i_csr_unit_instr;
                               mcause[63] <= 1'b0;
                               mcause[62:0] <= `lw_access_fault;
-                              `mstatus_mpp <= `s_mode;
+                              mstatus_mpp <= `s_mode;
                              end
                           end
                       endcase
@@ -737,17 +803,23 @@ begin: csr_assignment_proc
 
 if (!i_csr_unit_rst_n)
  begin    
-    mstatus[7:0]   <= 8'b0;
-    mstatus[10:9]  <= 2'b0;
-    mstatus[63:13] <= 49'b0;
-    sstatus[7:0]   <= 8'b0;
-    sstatus[63:9]  <= 55'b0;
-    mie            <= 64'b0;
+    mstatus_sie    <= 1'b0;
+    mstatus_mie    <= 1'b0;
+    mstatus_spie   <= 1'b0;
+    mstatus_mpie   <= 1'b0;
+    sstatus_sie    <= 1'b0;
+    sstatus_spie   <= 1'b0;
+    mie_reserved   <= 48'b0;
+    mie_meie       <= 1'b0;
+    mie_seie       <= 1'b0;
+    mie_stie       <= 1'b0;
+    mie_mtie       <= 1'b0;
     medeleg        <= 64'b0;
     mideleg        <= 64'b0;
-    sie            <= 64'b0;
+    sie_reserved   <= 48'b0;
+    sie_seie       <= 1'b0;
+    sie_stie       <= 1'b0;
     mtvec          <= 64'b0;
-    satp           <= 64'b0;
     stvec          <= 64'b0;
     mscratch       <= 64'b0;
     mtimecmp       <= 64'b0;
@@ -763,14 +835,14 @@ if (!i_csr_unit_rst_n)
     begin 
         if (i_csr_unit_mret_wb)
         begin
-            `mstatus_mie  <= `mstatus_mpie;
-            `mstatus_mpie <= 1'b1;
+            mstatus_mie  <= mstatus_mpie;
+            mstatus_mpie <= 1'b1;
         end
 
         else if (i_csr_unit_sret)
         begin
-            `sstatus_sie  <= `sstatus_spie;
-            `sstatus_spie <= 1'b1;
+            sstatus_sie  <= sstatus_spie;
+            sstatus_spie <= 1'b1;
         end
 
         else
@@ -779,25 +851,25 @@ if (!i_csr_unit_rst_n)
               
               `csr_mstatus:
                  begin
-                    `mstatus_mie  <= op_result[3];
-                    `mstatus_mpie <= op_result[7];
-                    `mstatus_sie  <= op_result[1];
-                    `mstatus_spie <= op_result[5];
+                    mstatus_mie  <= op_result[3];
+                    mstatus_mpie <= op_result[7];
+                    mstatus_sie  <= op_result[1];
+                    mstatus_spie <= op_result[5];
                  end
 
               `csr_sstatus:
                  begin
-                    `sstatus_sie  <= op_result[1];
-                    `sstatus_spie <= op_result[5];
+                    sstatus_sie  <= op_result[1];
+                    sstatus_spie <= op_result[5];
                  end
 
               `csr_mie:
                  begin
-                    `mie_meie <= op_result[11];
-                    `mie_mtie <= op_result[7];
-                    `mie_seie <= op_result[9];
-                    `mie_stie <= op_result[5];
-                     mie[63:16] <= op_result[63:16];
+                    mie_meie <= op_result[11];
+                    mie_mtie <= op_result[7];
+                    mie_seie <= op_result[9];
+                    mie_stie <= op_result[5];
+                    mie_reserved <= op_result[63:16];
                  end
 
               `csr_mtvec:
@@ -827,9 +899,9 @@ if (!i_csr_unit_rst_n)
 
               `csr_sie:
                  begin
-                  `sie_seie <= op_result[9];
-                  `sie_stie <= op_result[5];
-                  sie[63:16] <= op_result[63:16];
+                  sie_seie <= op_result[9];
+                  sie_stie <= op_result[5];
+                  sie_reserved <= op_result[63:16];
                  end
 
               `csr_stvec:
@@ -858,12 +930,12 @@ if (!i_csr_unit_rst_n)
         case (current_state)
           setting_up:
             begin
-                `mstatus_mpie <= `mstatus_mie;
-                `mstatus_spie <= `mstatus_sie;
-                `mstatus_mie  <= 1'b0;
-                `mstatus_sie  <= 1'b0;
-                `sstatus_spie <= `sstatus_sie;
-                `sstatus_sie  <= 1'b0;
+                mstatus_mpie <= mstatus_mie;
+                mstatus_spie <= mstatus_sie;
+                mstatus_mie  <= 1'b0;
+                mstatus_sie  <= 1'b0;
+                sstatus_spie <= sstatus_sie;
+                sstatus_sie  <= 1'b0;
             end
         endcase
     end
@@ -877,19 +949,19 @@ end
  begin
     if (! i_csr_unit_rst_n)
       begin
-        mip <= 64'b0;
-        sip <= 64'b0;
+        mip_meip <= 1'b0;
+        mip_mtip <= 1'b0;
+        ip_stip <= 1'b0;
+        ip_seip <= 1'b0;
       end
 
     else
 
     begin 
-      `mip_meip <= i_csr_unit_mexternal;
-      `sip_seip <= i_csr_unit_sexternal;
-      `mip_seip <= i_csr_unit_sexternal;
-      `mip_mtip <= (counter >= mtimecmp);
-      `sip_stip <= (counter >= stimecmp);
-      `mip_stip <= (counter >= stimecmp);
+      mip_meip <= i_csr_unit_mexternal;
+      ip_seip <= i_csr_unit_sexternal;
+      mip_mtip <= (counter >= mtimecmp);
+      ip_stip <= (counter >= stimecmp);
     end
 
  end
@@ -902,10 +974,10 @@ end
  /*********************************switching between modes********************************/
  always_comb  
    begin
-    current_mode = `mstatus_mpp;
+    current_mode = mstatus_mpp;
     
     if (i_csr_unit_mret_wb)
-      current_mode = `mstatus_mpp;
+      current_mode = mstatus_mpp;
 
     else if (i_csr_unit_sret)
       current_mode = `s_mode;
@@ -949,7 +1021,7 @@ end
 //trap address
 always_comb
   begin
-    if (`mstatus_spp)
+    if (mstatus_spp)
      begin
       tvec = stvec;
       cause = scause;
@@ -981,10 +1053,10 @@ assign o_csr_unit_mux1 = ((current_state == setting_up) | i_csr_unit_mret_wb | i
 
 
 //flush signals
-assign csr_flush_mem = i_csr_unit_lw_access_fault | i_csr_unit_sw_access_fault | ((`mstatus_mie | `mstatus_sie) & i_csr_unit_mem_wen) | (i_csr_unit_mret_wb | i_csr_unit_sret);
-assign csr_flush_exe = csr_flush_mem | i_csr_unit_illegal_instr_exe | i_csr_unit_instr_addr_misaligned | (`mstatus_mie | `mstatus_sie);
-assign csr_flush_id  = csr_flush_exe | pending_exception | (`mstatus_mie | `mstatus_sie);
-assign csr_flush_if  = pending_exception |(current_state == setting_up) | (`mstatus_mie) | (`mstatus_sie) | (i_csr_unit_mret_wb | i_csr_unit_sret);
+assign csr_flush_mem = i_csr_unit_lw_access_fault | i_csr_unit_sw_access_fault | ((mstatus_mie | mstatus_sie) & i_csr_unit_mem_wen) | (i_csr_unit_mret_wb | i_csr_unit_sret);
+assign csr_flush_exe = csr_flush_mem | i_csr_unit_illegal_instr_exe | i_csr_unit_instr_addr_misaligned | (mstatus_mie | mstatus_sie);
+assign csr_flush_id  = csr_flush_exe | pending_exception | (mstatus_mie | mstatus_sie);
+assign csr_flush_if  = pending_exception |(current_state == setting_up) | (mstatus_mie) | (mstatus_sie) | (i_csr_unit_mret_wb | i_csr_unit_sret);
 
 
 assign o_csr_unit_mem_flush = csr_flush_mem;

@@ -1,5 +1,5 @@
 /*
-    Authors : Mohamed Maged & Aly Elruby
+    Authors : Mohamed Maged & Ali Elruby
 */
 module riscv_core_top_2
 (
