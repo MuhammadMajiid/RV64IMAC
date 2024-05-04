@@ -1,6 +1,5 @@
 ######################################################
 ######################################################
-### Author: Mohamed Maged                          ###
 ### Project: RV64IMAC                              ###
 ### Development Board: UltraScale Kintex-7 KCU105  ###
 ### Part : XCKU040-2FFVA1156E                      ###
