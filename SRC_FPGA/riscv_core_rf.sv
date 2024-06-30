@@ -30,7 +30,7 @@ module riscv_core_rf (
         rf[2]=64'h000000007ffffff0;
         rf[3]=64'h0000000010000000;
     end	
-	always_ff @(negedge i_rf_clk) begin  //write
+	always @(negedge i_rf_clk) begin  //write
 		if ((i_rf_we3)&&(!(i_rf_a3==0))) rf[i_rf_a3] <= i_rf_wd3; 
 	end
 	//read

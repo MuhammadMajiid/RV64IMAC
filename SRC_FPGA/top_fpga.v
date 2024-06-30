@@ -1,11 +1,3 @@
-/*
-    Terminal Configuration:
-    - 8 bit data width
-    - 2 stop bits
-    - No parity bit
-    - BAUD RATE as in the Top module
-*/
-
 module riscv_core_top#(
     parameter DATA_WIDTH = 64,
     parameter ADDR_WIDTH = 64,
@@ -21,15 +13,9 @@ module riscv_core_top#(
     input  wire i_riscv_core_external_interrupt_m,
     input  wire i_riscv_core_external_interrupt_s,
     output wire o_riscv_core_ack,
-    ///uart
-    output wire o_riscv_core_uart_tx,
-    output wire o_riscv_core_uart_tx_busy
+    //leds
+    output wire [6:0] for_leds
 );
-
-// UART
-wire [DWIDTH-1:0] core_txdata;
-wire              core_txvalid;
-wire              ready_to_core;
 
 //Data_Cache
 wire [63:0] o_riscv_core_dcache_raddr_axi;
@@ -85,46 +71,7 @@ u_riscv_core_top_2
     ,.o_mem_req(o_riscv_core_icache_raddr_valid)/////
     ,.i_mem_done(i_riscv_core_icache_rready)/////
     ,.i_block_from_axi_i_cache(i_riscv_core_icache_rdata)/////
-    ,.uart_ready(ready_to_core)
-    ,.uart_out_data(core_txdata)
-    ,.uart_valid(core_txvalid)
-);
-
-uart_ssh#(
-    .block_WIDTH(block_WIDTH),
-    .CLK_RATE(CLK_RATE),
-    .BAUD_RATE(BAUD_RATE)
-)                                                                                                           
-u_uart_ssh                                                                                                                           
-(                                                                                                               
-    .clk(i_riscv_core_clk)                                                                                  
-    ,.rst(i_riscv_core_rst_n)                                                                                                                                                              
-    ,.tx_data(core_txdata)                                   
-    ,.tx_valid(core_txvalid)                                    
-    ,.tx_ready(ready_to_core)
-    /*
-     * AXI output
-     */
-    ,.rx_data()
-    ,.rx_valid()
-    ,.rx_ready(1'b1)
-    /*
-     * UART interface
-     */
-    ,.rxd(1'b1)
-    ,.txd(o_riscv_core_uart_tx)
-    /*
-     * Status
-     */
-    ,.tx_busy(o_riscv_core_uart_tx_busy)
-    ,.rx_busy()
-    ,.rx_overrun_error()
-    ,.rx_frame_error()
-    /*
-     * Configuration
-     */
-    //,.prescale(16'h0003)
-
+    ,.for_leds(for_leds)
 );
 
 mem_translator
