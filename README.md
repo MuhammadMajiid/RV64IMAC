@@ -4,7 +4,7 @@ Welcome to the RISC-V RV64IMAC RTL Design repository! This project represents ou
 1. [Aly Elruby](https://github.com/AlyElruby)
 2. [Ali Khaled](https://github.com/AKhaled47)
 3. [Mohamed Maged](https://github.com/MuhammadMajiid)
-4. [Haythem Shaban](https://github.com/Hythem-shaban)
+4. [Hythem Shaban](https://github.com/Hythem-shaban)
 5. [Mohamed Morsi](https://github.com/mohamedmorsi22)
 6. [Ziad Taha](https://github.com/ziadtaha4)
 7. [Moahemed Tareq](https://github.com/mohamed-mohamed-tarek)
