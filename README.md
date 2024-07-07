@@ -29,7 +29,7 @@ The RISC-V ISA is defined as a base integer ISA, which must be present in any im
 ## Microarchitecture Design
 Our microarchitecture is divided into two interacting parts: the datapath and the control unit. The datapath operates on double-words of data. It contains structures such as memories, registers, ALUs, and multiplexers. We are implementing the 64-bit RISC-V architecture, so we use a 64-bit datapath. The control unit receives the current instruction from the datapath and tells the datapath how to execute that instruction. Specifically, the control unit produces multiplexer select, register enable, and memory write signals to control the operation of the datapath. 
 Firstly, we designed a single cycle microarchitecture of base integer instructions (RV64I) then we applied pipelining and added a hazard unit to handle dependencies between simultaneously executing instructions and finally we include M, A, C extensions.
-![full micro-arch](2024-07-07-19-37-35.png)
+
 
 ## RTL Implementation
 The RTL implementation of our RV64IMAC is divided into the design of the blocks of each stage including level 1 caches and CSR unit, pipes, and the top module. 
