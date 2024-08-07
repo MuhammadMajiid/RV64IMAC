@@ -21,7 +21,7 @@ module riscv_core_top
   output logic [63:0] o_addr_from_control_to_axi,
   output logic o_mem_req,
   input  logic i_mem_done,
-  input  logic [255:0] i_block_from_axi_i_cache,
+  input  logic [255:0] i_block_from_axi_i_cache
 
 
 );
