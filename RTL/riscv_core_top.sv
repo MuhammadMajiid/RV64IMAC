@@ -15,7 +15,7 @@ module riscv_core_top
   input  logic mem_read_done,
   input  logic i_mem_write_done,
   input  logic [255:0] i_block_from_axi_data_cache,
-  output logic [ 6 : 0] o_mem_write_strobe,
+  output logic [ 7 : 0] o_mem_write_strobe,
   
   //INSTR_CACHE
   output logic [63:0] o_addr_from_control_to_axi,
@@ -1822,7 +1822,7 @@ u_riscv_core_hazard_unit
     ,.i_hazard_unit_csr_flush_mem (csr_ex_flush)
     ,.i_hazard_unit_csr_flush_wb  (csr_mem_flush)
     // UART 
-    ,.i_hazard_unit_uart_stall    (1'b0)
+    //,.i_hazard_unit_uart_stall    (1'b0)
     // Forwarding outputs
     ,.o_hazard_unit_forwarda_ex   (hu_forward_a)
     ,.o_hazard_unit_forwardb_ex   (hu_forward_b)
