@@ -1,4 +1,4 @@
-module riscv_core_top_2
+module riscv_core_top
 (
   // Global inputs
   input  logic i_riscv_core_clk,
