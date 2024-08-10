@@ -15,13 +15,13 @@ module riscv_core_top
   input  logic mem_read_done,
   input  logic i_mem_write_done,
   input  logic [255:0] i_block_from_axi_data_cache,
-  output logic [ 6 : 0] o_mem_write_strobe,
+  output logic [ 7 : 0] o_mem_write_strobe,
   
   //INSTR_CACHE
   output logic [63:0] o_addr_from_control_to_axi,
   output logic o_mem_req,
   input  logic i_mem_done,
-  input  logic [255:0] i_block_from_axi_i_cache,
+  input  logic [255:0] i_block_from_axi_i_cache
 
 
 );
