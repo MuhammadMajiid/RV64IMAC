@@ -394,8 +394,8 @@ begin:trap_setup_proc
         mtval  <= 64'b0;
         mtinst <= 64'b0;
         scause <= 64'b0;
-        mepc   <= 64'b0;
-        sepc   <= 64'b0;
+        mepc   = 64'b0;
+        sepc   = 64'b0;
         stval  <= 64'b0;
     end
 

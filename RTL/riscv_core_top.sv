@@ -1822,7 +1822,7 @@ u_riscv_core_hazard_unit
     ,.i_hazard_unit_csr_flush_mem (csr_ex_flush)
     ,.i_hazard_unit_csr_flush_wb  (csr_mem_flush)
     // UART 
-    ,.i_hazard_unit_uart_stall    (1'b0)
+    //,.i_hazard_unit_uart_stall    (1'b0)
     // Forwarding outputs
     ,.o_hazard_unit_forwarda_ex   (hu_forward_a)
     ,.o_hazard_unit_forwardb_ex   (hu_forward_b)
